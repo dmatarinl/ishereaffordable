@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Is Here Affordable?</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #151515;
+        --muted: #5c6570;
+        --line: #d9dee3;
+        --paper: #f7f5ef;
+        --panel: #ffffff;
+        --accent: #126c63;
+        --accent-dark: #0d514b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 44px;
+      }
+
+      .brand {
+        font-weight: 800;
+        font-size: 18px;
+      }
+
+      .domain {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 40px;
+        align-items: start;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 760px;
+        font-size: clamp(42px, 7vw, 82px);
+        line-height: 0.94;
+        letter-spacing: 0;
+      }
+
+      .intro {
+        max-width: 640px;
+        margin: 24px 0 0;
+        font-size: 19px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+
+      .tool {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 20px 50px rgb(20 20 20 / 8%);
+      }
+
+      form {
+        display: grid;
+        gap: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      input,
+      select,
+      button {
+        width: 100%;
+        min-height: 46px;
+        border-radius: 6px;
+        font: inherit;
+      }
+
+      input,
+      select {
+        border: 1px solid var(--line);
+        padding: 0 12px;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      button {
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--accent-dark);
+      }
+
+      .result {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .amount {
+        margin: 8px 0;
+        font-size: clamp(34px, 5vw, 54px);
+        line-height: 1;
+        font-weight: 850;
+      }
+
+      .breakdown {
+        display: grid;
+        gap: 8px;
+        margin-top: 18px;
+        color: var(--muted);
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .source {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          padding-top: 24px;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topbar">
+        <div class="brand">Is Here Affordable?</div>
+        <div class="domain">ishereaffordable.com</div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <h1>Know the money a city asks from you.</h1>
+          <p class="intro">
+            Search a city and get an initial monthly affordability estimate.
+            The current data is a development baseline while real providers and
+            scraping are connected.
+          </p>
+        </div>
+
+        <section class="tool" aria-label="Affordability calculator">
+          <form id="calculator-form">
+            <label>
+              City
+              <input id="city" name="city" value="Madrid" autocomplete="address-level2" />
+            </label>
+            <label>
+              Currency
+              <select id="currency" name="currency">
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </label>
+            <button type="submit">Calculate</button>
+          </form>
+
+          <div class="result" id="result" hidden></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#calculator-form");
+      const result = document.querySelector("#result");
+
+      const formatMoney = (value, currency) =>
+        new Intl.NumberFormat("en", {
+          style: "currency",
+          currency,
+          maximumFractionDigits: 0,
+        }).format(value);
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const params = new URLSearchParams(data);
+
+        result.hidden = false;
+        result.textContent = "Calculating...";
+
+        const response = await fetch(`/api/affordability?${params.toString()}`);
+        const estimate = await response.json();
+
+        result.innerHTML = `
+          <div>${estimate.city}, ${estimate.country}</div>
+          <div class="amount">${formatMoney(estimate.monthly_required, estimate.currency)}</div>
+          <div>per month</div>
+          <div class="breakdown">
+            <div class="row"><span>Baseline</span><strong>${formatMoney(estimate.monthly_baseline, estimate.currency)}</strong></div>
+            <div class="row"><span>Safety margin</span><strong>${formatMoney(estimate.monthly_safety_margin, estimate.currency)}</strong></div>
+            <div class="row"><span>Annual target</span><strong>${formatMoney(estimate.annual_required, estimate.currency)}</strong></div>
+          </div>
+          <div class="source">${estimate.source}</div>
+        `;
+      });
+
+      form.requestSubmit();
+    </script>
+  </body>
+</html>
