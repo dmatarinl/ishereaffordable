@@ -12,3 +12,37 @@ services:
         value: EUR
       - key: SAFETY_MARGIN_PERCENT
         value: 15
+      - key: ESIOS_PVPC_INDICATOR_ID
+        value: 1001
+      - key: ESIOS_LOOKBACK_DAYS
+        value: 30
+      - key: ELECTRICITY_MONTHLY_KWH
+        value: 180
+      - key: ELECTRICITY_FIXED_MONTHLY_EUR
+        value: 14
+      - key: ENABLE_SUPERMARKET_SCRAPING
+        value: false
+      - key: SOURCE_USER_AGENT
+        value: IsHereAffordableBot/0.1 (+https://ishereaffordable.com)
+
+cronJobs:
+  - name: refresh-cost-observations
+    runtime: python
+    schedule: "0 4 * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.jobs.refresh_all
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEFAULT_CURRENCY
+        value: EUR
+      - key: SAFETY_MARGIN_PERCENT
+        value: 15
+      - key: ESIOS_PVPC_INDICATOR_ID
+        value: 1001
+      - key: ESIOS_LOOKBACK_DAYS
+        value: 30
+      - key: ELECTRICITY_MONTHLY_KWH
+        value: 180
+      - key: ELECTRICITY_FIXED_MONTHLY_EUR
+        value: 14
