@@ -6,6 +6,7 @@ from app.affordability.models import (
     Confidence,
     CostCategory,
     CostLineItem,
+    DataMode,
 )
 
 CORE_CATEGORIES = [
@@ -51,9 +52,11 @@ class AffordabilityCalculator:
             label="Safety margin",
             monthly_amount=round(monthly_safety_margin, 2),
             currency=costs.currency,
+            data_mode=DataMode.CALCULATED,
             source_name="Is Here Affordable formula",
             source_url="https://github.com/dmatarinl/ishereaffordable",
             observed_at=datetime.now(UTC),
+            cached_at=datetime.now(UTC),
             confidence=Confidence.MEDIUM,
             methodology=(
                 f"{self.safety_margin_percent:g}% buffer applied to the monthly "
@@ -69,9 +72,15 @@ class AffordabilityCalculator:
             for category in missing_categories
         ]
         warnings.extend(
-            f"{item.label} is based on low-confidence fallback data."
+            f"{item.label} is based on manual fallback data."
+            for item in line_items
+            if item.data_mode == DataMode.MANUAL_SEED
+        )
+        warnings.extend(
+            f"{item.label} is low confidence."
             for item in line_items
             if item.confidence == Confidence.LOW
+            and item.data_mode != DataMode.MANUAL_SEED
         )
 
         return AffordabilityEstimate(
@@ -96,7 +105,7 @@ class AffordabilityCalculator:
             ],
             warnings=warnings,
             freshness={
-                item.category.value: item.observed_at
+                item.category.value: item.cached_at or item.observed_at
                 for item in line_items
             },
         )

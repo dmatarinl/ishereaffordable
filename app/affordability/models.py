@@ -22,14 +22,25 @@ class Confidence(StrEnum):
     LOW = "low"
 
 
+class DataMode(StrEnum):
+    OFFICIAL_API = "official_api"
+    PERMITTED_SCRAPE = "permitted_scrape"
+    MANUAL_SEED = "manual_seed"
+    CALCULATED = "calculated"
+    UNAVAILABLE = "unavailable"
+
+
 class CostLineItem(BaseModel):
     category: CostCategory
     label: str
     monthly_amount: float = Field(ge=0)
     currency: str = Field(min_length=3, max_length=3)
+    data_mode: DataMode = DataMode.MANUAL_SEED
     source_name: str
     source_url: str
     observed_at: datetime
+    cached_at: datetime | None = None
+    valid_until: datetime | None = None
     confidence: Confidence
     methodology: str
     details: dict[str, Any] = Field(default_factory=dict)

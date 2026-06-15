@@ -18,6 +18,14 @@ def test_affordability_endpoint_returns_source_breakdown() -> None:
         "food",
         "safety_margin",
     }
+    rent = next(item for item in payload["line_items"] if item["category"] == "rent")
+    safety_margin = next(
+        item for item in payload["line_items"] if item["category"] == "safety_margin"
+    )
+    assert rent["data_mode"] == "manual_seed"
+    assert rent["cached_at"]
+    assert "observed" not in rent["source_name"].lower()
+    assert safety_margin["data_mode"] == "calculated"
     assert payload["warnings"]
 
 

@@ -1,4 +1,4 @@
-from app.affordability.models import Confidence, CostCategory
+from app.affordability.models import Confidence, CostCategory, DataMode
 from app.cities import get_supported_city
 from app.providers.esios import EsiosElectricityProvider
 from app.providers.seed import (
@@ -44,6 +44,7 @@ def test_seed_providers_cover_all_core_categories() -> None:
     }
     assert all(item.source_name for item in items)
     assert all(item.source_url for item in items)
+    assert all(item.data_mode == DataMode.MANUAL_SEED for item in items)
 
 
 class FakeResponse:
@@ -82,6 +83,7 @@ def test_esios_provider_uses_fallback_without_token() -> None:
     assert item.category == CostCategory.ELECTRICITY
     assert item.monthly_amount == 48.2
     assert item.confidence == Confidence.LOW
+    assert item.data_mode == DataMode.MANUAL_SEED
     assert item.details["fallback_reason"] == "Missing ESIOS_API_TOKEN"
 
 
@@ -111,6 +113,7 @@ def test_esios_provider_calculates_from_indicator_values() -> None:
     assert item.category == CostCategory.ELECTRICITY
     assert item.monthly_amount == 41
     assert item.confidence == Confidence.HIGH
+    assert item.data_mode == DataMode.OFFICIAL_API
     assert item.details["raw_values"] == 2
     assert item.details["average_eur_per_kwh"] == 0.15
     assert client.last_request["headers"]["x-api-key"] == "token"

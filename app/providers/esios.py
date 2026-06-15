@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from app.affordability.models import Confidence, CostCategory, CostLineItem
+from app.affordability.models import Confidence, CostCategory, CostLineItem, DataMode
 from app.cities import SupportedCity
 from app.providers.seed import ESIOS_API_URL
 
@@ -88,6 +88,7 @@ class EsiosElectricityProvider:
             label="Electricity",
             monthly_amount=monthly_amount,
             currency=city.currency,
+            data_mode=DataMode.OFFICIAL_API,
             source_name=self.source_name,
             source_url=f"{ESIOS_API_URL.rstrip('/')}/indicators/{self.indicator_id}",
             observed_at=_latest_observed_at(values),
@@ -116,6 +117,7 @@ class EsiosElectricityProvider:
             label="Electricity",
             monthly_amount=electricity,
             currency=city.currency,
+            data_mode=DataMode.MANUAL_SEED,
             source_name="Fallback electricity seed pending eSIOS",
             source_url=ESIOS_API_URL,
             observed_at=datetime.now(UTC),

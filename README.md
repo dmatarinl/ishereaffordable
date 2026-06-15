@@ -55,7 +55,16 @@ Each cost category is stored as a normalized observation:
 - `safety_margin` is calculated, not stored as source data
 
 Each line item includes monthly amount, source name, source URL, observation
-time, confidence, methodology, and provider-specific details.
+time, cache time, data mode, confidence, methodology, and provider-specific
+details.
+
+Data mode is intentionally separate from confidence:
+
+- `manual_seed`: cached fallback data maintained inside the app.
+- `official_api`: fetched from an official API or open-data endpoint.
+- `permitted_scrape`: scraped only where source rules allow it.
+- `calculated`: produced by the Is Here Affordable formula.
+- `unavailable`: no trustworthy value is available.
 
 ## Refresh Jobs
 

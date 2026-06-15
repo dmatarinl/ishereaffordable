@@ -24,6 +24,7 @@ from app.affordability.models import (
     Confidence,
     CostCategory,
     CostLineItem,
+    DataMode,
     SourceStatus,
 )
 
@@ -40,9 +41,12 @@ cost_observations = Table(
     Column("label", String(120), nullable=False),
     Column("monthly_amount", Float, nullable=False),
     Column("currency", String(3), nullable=False),
+    Column("data_mode", String(40), nullable=False, default=DataMode.MANUAL_SEED.value),
     Column("source_name", String(180), nullable=False),
     Column("source_url", Text, nullable=False),
     Column("observed_at", DateTime(timezone=True), nullable=False),
+    Column("cached_at", DateTime(timezone=True), nullable=True),
+    Column("valid_until", DateTime(timezone=True), nullable=True),
     Column("confidence", String(20), nullable=False),
     Column("methodology", Text, nullable=False),
     Column("details_json", Text, nullable=False),
@@ -76,6 +80,32 @@ class CostObservationRepository:
 
     def init_schema(self) -> None:
         metadata.create_all(self.engine)
+        self._migrate_schema()
+
+    def _migrate_schema(self) -> None:
+        if self.engine.dialect.name != "sqlite":
+            return
+
+        with self.engine.begin() as connection:
+            existing_columns = {
+                row[1]
+                for row in connection.exec_driver_sql(
+                    "PRAGMA table_info(cost_observations)"
+                )
+            }
+            if "data_mode" not in existing_columns:
+                connection.exec_driver_sql(
+                    "ALTER TABLE cost_observations "
+                    "ADD COLUMN data_mode VARCHAR(40) NOT NULL DEFAULT 'manual_seed'"
+                )
+            if "cached_at" not in existing_columns:
+                connection.exec_driver_sql(
+                    "ALTER TABLE cost_observations ADD COLUMN cached_at DATETIME"
+                )
+            if "valid_until" not in existing_columns:
+                connection.exec_driver_sql(
+                    "ALTER TABLE cost_observations ADD COLUMN valid_until DATETIME"
+                )
 
     def has_any_observations(self) -> bool:
         with self.engine.begin() as connection:
@@ -101,9 +131,12 @@ class CostObservationRepository:
                 "label": item.label,
                 "monthly_amount": item.monthly_amount,
                 "currency": item.currency,
+                "data_mode": item.data_mode.value,
                 "source_name": item.source_name,
                 "source_url": item.source_url,
                 "observed_at": item.observed_at,
+                "cached_at": item.cached_at or now,
+                "valid_until": item.valid_until,
                 "confidence": item.confidence.value,
                 "methodology": item.methodology,
                 "details_json": json.dumps(item.details, sort_keys=True),
@@ -141,9 +174,13 @@ class CostObservationRepository:
                 label=record["label"],
                 monthly_amount=record["monthly_amount"],
                 currency=record["currency"],
+                data_mode=DataMode(record["data_mode"]),
                 source_name=record["source_name"],
                 source_url=record["source_url"],
                 observed_at=_coerce_datetime(record["observed_at"]),
+                cached_at=_coerce_datetime_or_none(record["cached_at"])
+                or _coerce_datetime(record["created_at"]),
+                valid_until=_coerce_datetime_or_none(record["valid_until"]),
                 confidence=Confidence(record["confidence"]),
                 methodology=record["methodology"],
                 details=json.loads(record["details_json"]),

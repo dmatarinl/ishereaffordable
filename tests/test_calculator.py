@@ -6,6 +6,7 @@ from app.affordability.models import (
     Confidence,
     CostCategory,
     CostLineItem,
+    DataMode,
 )
 
 
@@ -47,6 +48,7 @@ def test_estimate_adds_safety_margin() -> None:
     assert estimate.monthly_required == 1600.5
     assert estimate.annual_required == 19206
     assert estimate.line_items[-1].category == CostCategory.SAFETY_MARGIN
+    assert estimate.line_items[-1].data_mode == DataMode.CALCULATED
 
 
 def test_missing_categories_are_reported() -> None:
@@ -77,7 +79,7 @@ def test_low_confidence_items_are_reported() -> None:
 
     estimate = AffordabilityCalculator(safety_margin_percent=15).estimate(costs)
 
-    assert "rent is based on low-confidence fallback data." in estimate.warnings
+    assert "rent is based on manual fallback data." in estimate.warnings
 
 
 def test_negative_safety_margin_is_rejected() -> None:

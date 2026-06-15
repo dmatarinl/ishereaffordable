@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from app.affordability.models import Confidence, CostCategory, CostLineItem
+from app.affordability.models import Confidence, CostCategory, CostLineItem, DataMode
 from app.cities import SupportedCity
 
 IDEALISTA_ACCESS_URL = "https://developers.idealista.com/access-request"
@@ -119,6 +119,7 @@ class SeedHousingProvider:
                 label="One-bedroom rent",
                 monthly_amount=seed["amount"],
                 currency=city.currency,
+                data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
                 source_url=IDEALISTA_ACCESS_URL,
                 observed_at=_observed_at(),
@@ -152,6 +153,7 @@ class SeedFoodBasketProvider:
                 label="Food basket",
                 monthly_amount=total,
                 currency=city.currency,
+                data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
                 source_url=INE_API_URL,
                 observed_at=_observed_at(),
@@ -185,6 +187,7 @@ class SeedUtilityProvider:
                 label="Gas",
                 monthly_amount=gas,
                 currency=city.currency,
+                data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
                 source_url="https://www.boe.es/",
                 observed_at=_observed_at(),
@@ -200,6 +203,7 @@ class SeedUtilityProvider:
                 label="Water",
                 monthly_amount=water,
                 currency=city.currency,
+                data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
                 source_url=GITHUB_URL,
                 observed_at=_observed_at(),
@@ -225,6 +229,7 @@ class SeedMunicipalTaxProvider:
                 label="Trash tax",
                 monthly_amount=round(annual_tax / 12, 2),
                 currency=city.currency,
+                data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
                 source_url=GITHUB_URL,
                 observed_at=_observed_at(),
@@ -249,6 +254,7 @@ class SeedTransportProvider:
                 label="Public transport",
                 monthly_amount=TRANSPORT_SEEDS[city.key],
                 currency=city.currency,
+                data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
                 source_url=GITHUB_URL,
                 observed_at=_observed_at(),

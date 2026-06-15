@@ -208,6 +208,26 @@
         color: var(--warn);
       }
 
+      .badge.mode {
+        background: #e9f3f1;
+        color: var(--accent-dark);
+      }
+
+      .badge.manual_seed {
+        background: #fff0e7;
+        color: var(--warn);
+      }
+
+      .badge.official_api {
+        background: #e8f4ea;
+        color: #236b38;
+      }
+
+      .badge.calculated {
+        background: #eef0f3;
+        color: var(--muted);
+      }
+
       .source {
         margin-top: 5px;
         color: var(--muted);
@@ -305,6 +325,14 @@
         safety_margin: "Safety margin",
       };
 
+      const dataModeLabels = {
+        official_api: "Official API",
+        permitted_scrape: "Permitted scrape",
+        manual_seed: "Cached fallback",
+        calculated: "Calculated",
+        unavailable: "Unavailable",
+      };
+
       async function loadCities() {
         const response = await fetch("/api/cities");
         const payload = await response.json();
@@ -325,22 +353,50 @@
 
       function renderLineItem(item, currency) {
         const label = categoryLabels[item.category] ?? item.label;
-        const badgeClass = item.confidence === "low" ? "badge low" : "badge";
+        const confidenceClass = item.confidence === "low" ? "badge low" : "badge";
+        const dataModeLabel = dataModeLabels[item.data_mode] ?? item.data_mode;
+        const dataModeClass = `badge mode ${item.data_mode}`;
+        const sourceTimeline = renderSourceTimeline(item);
         return `
           <div class="row">
             <div>
               <div class="row-title">
                 <span>${label}</span>
-                <span class="${badgeClass}">${item.confidence}</span>
+                <span class="${dataModeClass}">${dataModeLabel}</span>
+                <span class="${confidenceClass}">${item.confidence}</span>
               </div>
               <div class="source">
-                ${item.source_name} · observed ${formatDate(item.observed_at)}
+                ${item.source_name} · ${sourceTimeline}
                 <br />${item.methodology}
               </div>
             </div>
             <strong>${formatMoney(item.monthly_amount, currency)}</strong>
           </div>
         `;
+      }
+
+      function renderSourceTimeline(item) {
+        const cachedAt = item.cached_at ? formatDate(item.cached_at) : "unknown cache time";
+        const observedAt = item.observed_at
+          ? formatDate(item.observed_at)
+          : "source observation unavailable";
+        const validUntil = item.valid_until
+          ? ` · valid until ${formatDate(item.valid_until)}`
+          : "";
+
+        if (item.data_mode === "manual_seed") {
+          return `cached fallback ${cachedAt}${validUntil}`;
+        }
+        if (item.data_mode === "official_api") {
+          return `official source observed ${observedAt} · cached ${cachedAt}${validUntil}`;
+        }
+        if (item.data_mode === "permitted_scrape") {
+          return `permitted scrape observed ${observedAt} · cached ${cachedAt}${validUntil}`;
+        }
+        if (item.data_mode === "calculated") {
+          return `calculated by formula ${cachedAt}${validUntil}`;
+        }
+        return `unavailable · cached ${cachedAt}${validUntil}`;
       }
 
       async function calculate() {

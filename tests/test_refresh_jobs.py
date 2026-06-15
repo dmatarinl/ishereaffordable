@@ -11,7 +11,10 @@ def test_refresh_city_is_idempotent(tmp_path) -> None:
 
     assert first.observations == 7
     assert second.observations == 7
-    assert len(repository.latest_city_observations("madrid")) == 7
+    observations = repository.latest_city_observations("madrid")
+    assert len(observations) == 7
+    assert all(observation.cached_at for observation in observations)
+    assert {observation.data_mode for observation in observations}
 
 
 def test_refresh_all_covers_supported_cities(tmp_path) -> None:
