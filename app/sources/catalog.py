@@ -24,7 +24,7 @@ SOURCE_RULES = {
     CostCategory.RENT: SourceRule(
         category=CostCategory.RENT,
         label="Rent",
-        first_choice="Idealista API or approved real-estate API",
+        first_choice="Idealista Search API or approved real-estate API",
         second_choice="Permitted portal scrape",
         fallback="Manual rental seed",
         allowed_data_modes=[

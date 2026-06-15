@@ -81,7 +81,7 @@ def test_low_confidence_items_are_reported() -> None:
 
     assert (
         "rent uses manual seed fallback data; preferred source is "
-        "Idealista API or approved real-estate API."
+        "Idealista Search API or approved real-estate API."
     ) in estimate.warnings
 
 

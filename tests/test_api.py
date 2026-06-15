@@ -56,7 +56,7 @@ def test_sources_rules_endpoint_returns_policy_catalog() -> None:
     rent = next(rule for rule in rules if rule["category"] == "rent")
     electricity = next(rule for rule in rules if rule["category"] == "electricity")
 
-    assert rent["first_choice"] == "Idealista API or approved real-estate API"
+    assert rent["first_choice"] == "Idealista Search API or approved real-estate API"
     assert "manual_seed" in rent["allowed_data_modes"]
     assert rent["freshness_days"] == 7
     assert electricity["first_choice"] == "eSIOS API"

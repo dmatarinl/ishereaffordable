@@ -105,7 +105,8 @@ They make the product usable while real sources are integrated.
 
 Source integrations:
 
-- Rent: Idealista Search API once access is granted.
+- Rent: Idealista Search API once access is granted. The access-request draft is
+  in [`docs/idealista-api-request.md`](docs/idealista-api-request.md).
 - Electricity: eSIOS/PVPC data when `ESIOS_API_TOKEN` is configured. Without
   that token, the app keeps a low-confidence electricity fallback so the MVP
   remains usable.

@@ -35,7 +35,7 @@ def test_manual_seed_warns_with_preferred_source() -> None:
 
     assert warnings == [
         "rent uses manual seed fallback data; preferred source is "
-        "Idealista API or approved real-estate API."
+        "Idealista Search API or approved real-estate API."
     ]
 
 
