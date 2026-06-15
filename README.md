@@ -69,6 +69,11 @@ call external sources per user request.
 
 ## Source Strategy
 
+Source work follows the project constitution in
+[`.specify/memory/constitution.md`](.specify/memory/constitution.md). The first
+spec-driven feature is
+[`specs/001-source-transparency-fallback-labeling/spec.md`](specs/001-source-transparency-fallback-labeling/spec.md).
+
 The current implementation includes source-aware seed providers for all eight
 Spain MVP cities:
 
