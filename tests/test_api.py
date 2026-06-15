@@ -47,6 +47,22 @@ def test_sources_status_endpoint_returns_refresh_health() -> None:
     assert response.json()["sources"]
 
 
+def test_sources_rules_endpoint_returns_policy_catalog() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/sources/rules")
+
+    assert response.status_code == 200
+    rules = response.json()["rules"]
+    rent = next(rule for rule in rules if rule["category"] == "rent")
+    electricity = next(rule for rule in rules if rule["category"] == "electricity")
+
+    assert rent["first_choice"] == "Idealista API or approved real-estate API"
+    assert "manual_seed" in rent["allowed_data_modes"]
+    assert rent["freshness_days"] == 7
+    assert electricity["first_choice"] == "eSIOS API"
+    assert electricity["freshness_days"] == 1
+
+
 def test_unsupported_city_is_rejected() -> None:
     with TestClient(app) as client:
         response = client.get("/api/affordability?city=Paris&currency=EUR")

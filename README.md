@@ -39,6 +39,7 @@ observations yet.
 curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR"
 curl "http://127.0.0.1:8000/api/cities"
 curl "http://127.0.0.1:8000/api/sources/status"
+curl "http://127.0.0.1:8000/api/sources/rules"
 ```
 
 ## Current Data Model
@@ -65,6 +66,10 @@ Data mode is intentionally separate from confidence:
 - `permitted_scrape`: scraped only where source rules allow it.
 - `calculated`: produced by the Is Here Affordable formula.
 - `unavailable`: no trustworthy value is available.
+
+Source rules are machine-readable in `app/sources/catalog.py` and exposed via
+`/api/sources/rules`. Each rule defines source priority, allowed data modes,
+freshness limits, and user-facing guidance.
 
 ## Refresh Jobs
 

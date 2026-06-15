@@ -9,6 +9,7 @@ from app.cities import SUPPORTED_CITIES, get_supported_city
 from app.core.config import settings
 from app.services.affordability import AffordabilityService
 from app.services.refresh import ensure_seed_data
+from app.sources.catalog import source_rules
 from app.storage.database import CostObservationRepository
 
 repository = CostObservationRepository(settings.database_url)
@@ -47,6 +48,11 @@ def cities():
 @app.get("/api/sources/status")
 def sources_status():
     return {"sources": repository.source_statuses()}
+
+
+@app.get("/api/sources/rules")
+def sources_rules():
+    return {"rules": source_rules()}
 
 
 @app.get("/api/affordability")

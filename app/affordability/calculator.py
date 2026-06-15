@@ -8,6 +8,7 @@ from app.affordability.models import (
     CostLineItem,
     DataMode,
 )
+from app.sources.catalog import validate_line_items
 
 CORE_CATEGORIES = [
     CostCategory.RENT,
@@ -71,17 +72,7 @@ class AffordabilityCalculator:
             f"Missing cached data for category: {category}"
             for category in missing_categories
         ]
-        warnings.extend(
-            f"{item.label} is based on manual fallback data."
-            for item in line_items
-            if item.data_mode == DataMode.MANUAL_SEED
-        )
-        warnings.extend(
-            f"{item.label} is low confidence."
-            for item in line_items
-            if item.confidence == Confidence.LOW
-            and item.data_mode != DataMode.MANUAL_SEED
-        )
+        warnings.extend(validate_line_items(line_items))
 
         return AffordabilityEstimate(
             city=costs.city,

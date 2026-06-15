@@ -79,7 +79,10 @@ def test_low_confidence_items_are_reported() -> None:
 
     estimate = AffordabilityCalculator(safety_margin_percent=15).estimate(costs)
 
-    assert "rent is based on manual fallback data." in estimate.warnings
+    assert (
+        "rent uses manual seed fallback data; preferred source is "
+        "Idealista API or approved real-estate API."
+    ) in estimate.warnings
 
 
 def test_negative_safety_margin_is_rejected() -> None:
