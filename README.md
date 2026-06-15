@@ -115,6 +115,18 @@ Source integrations:
 - Food: fixed basket refreshed from supermarket adapters for Mercadona,
   Carrefour, and Dia/Alcampo where allowed by terms and robots rules.
 
+## Food Basket
+
+The canonical grocery basket is defined in
+[`app/data/food_basket.json`](app/data/food_basket.json) and loaded through
+`app/food/basket.py`. It represents one adult, one month, and stays identical
+for every city. Supermarket adapters will price that same basket by city or
+postcode, then the app will use the median valid supermarket basket total.
+
+The basket includes item quantities, matching terms, allowed substitutions,
+required/optional flags, source basis, and confidence thresholds for missing
+products.
+
 To enable eSIOS electricity:
 
 1. Request a personal token from the official eSIOS API documentation site.

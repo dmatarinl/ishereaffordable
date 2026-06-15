@@ -7,13 +7,13 @@ Access form: https://developers.idealista.com/access-request
 
 ## Copy/Paste Project Description
 
-Is Here Affordable? is a public web app at https://ishereaffordable.com that
+Is Here Affordable? will be a public web app at https://ishereaffordable.com (not ready yet) that
 helps people understand the monthly amount they may need to live in a Spanish
 city. The first version focuses on one adult living alone, renting a
 one-bedroom home, without a car, and currently supports Madrid, Barcelona,
 Valencia, Sevilla, Zaragoza, Málaga, Bilbao, and Alicante.
 
-We would like to use the Idealista Search API as the primary source for rental
+I would like to use the Idealista Search API as the primary source for rental
 costs. Rent is the largest category in the estimate, so our goal is to replace
 our current low-confidence manual fallback values with source-attributed market
 data from Idealista.
@@ -25,13 +25,13 @@ the sample size allows it, we will also show P25 and P75 ranges, sample size,
 source name, source URL, refresh time, confidence level, and a clear
 methodology note.
 
-We will not call the API on ordinary user page loads. The public app reads from
+I will not call the API on ordinary user page loads. The public app reads from
 our cache only. API calls will run in scheduled refresh jobs, initially once per
 day or less for the supported cities. For the MVP this means roughly one
 scheduled search per supported city per refresh cycle, with conservative usage
 and respect for any rate limits or display requirements provided by Idealista.
 
-We plan to store normalized aggregate observations, not a mirrored copy of
+I plan to store normalized aggregate observations, not a mirrored copy of
 Idealista. For rent, the cache will contain fields such as city, monthly median
 rent, P25/P75 range where available, sample count, query profile, observed_at,
 cached_at, source name, and methodology. We do not intend to store or republish

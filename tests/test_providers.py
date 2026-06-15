@@ -1,5 +1,6 @@
 from app.affordability.models import Confidence, CostCategory, DataMode
 from app.cities import get_supported_city
+from app.food.basket import canonical_food_basket
 from app.providers.esios import EsiosElectricityProvider
 from app.providers.seed import (
     SeedFoodBasketProvider,
@@ -85,6 +86,21 @@ def test_esios_provider_uses_fallback_without_token() -> None:
     assert item.confidence == Confidence.LOW
     assert item.data_mode == DataMode.MANUAL_SEED
     assert item.details["fallback_reason"] == "Missing ESIOS_API_TOKEN"
+
+
+def test_seed_food_provider_uses_canonical_basket() -> None:
+    city = get_supported_city("Valencia")
+    assert city is not None
+    basket = canonical_food_basket()
+
+    item = SeedFoodBasketProvider().fetch_city(city)[0]
+
+    assert item.category == CostCategory.FOOD
+    assert item.monthly_amount == basket.seed_monthly_total_eur()
+    assert item.details["basket_version"] == basket.version
+    assert item.details["basket_items"] == len(basket.items)
+    assert item.details["required_items"] == basket.required_item_count
+    assert item.details["aggregation_method"] == "median_valid_supermarket_basket"
 
 
 def test_esios_provider_calculates_from_indicator_values() -> None:

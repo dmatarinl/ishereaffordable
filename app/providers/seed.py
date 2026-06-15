@@ -2,11 +2,16 @@ from datetime import UTC, datetime
 
 from app.affordability.models import Confidence, CostCategory, CostLineItem, DataMode
 from app.cities import SupportedCity
+from app.food.basket import canonical_food_basket
 
 IDEALISTA_ACCESS_URL = "https://developers.idealista.com/access-request"
 INE_API_URL = "https://www.ine.es/dyngs/DAB/index.htm?cid=1099"
 ESIOS_API_URL = "https://api.esios.ree.es"
 GITHUB_URL = "https://github.com/dmatarinl/ishereaffordable"
+MAPA_FOOD_PANEL_URL = (
+    "https://www.mapa.gob.es/es/alimentacion/temas/consumo-tendencias/"
+    "panel-de-consumo-alimentario/"
+)
 
 
 RENT_SEEDS = {
@@ -64,45 +69,6 @@ TRANSPORT_SEEDS = {
     "alicante": 37.5,
 }
 
-FOOD_BASKET = [
-    ("Milk", 8, 0.95),
-    ("Bread", 12, 1.25),
-    ("Rice", 2, 1.6),
-    ("Pasta", 2.5, 1.5),
-    ("Potatoes", 5, 1.4),
-    ("Onions", 2, 1.5),
-    ("Tomatoes", 3.5, 2.3),
-    ("Lettuce", 4, 1.2),
-    ("Bananas", 4, 1.6),
-    ("Apples", 4, 2.1),
-    ("Oranges", 3, 1.8),
-    ("Eggs", 3, 2.5),
-    ("Chicken", 4, 7.0),
-    ("Minced beef", 1.2, 9.0),
-    ("White fish", 1.5, 10.0),
-    ("Canned tuna", 8, 1.1),
-    ("Lentils", 2, 2.0),
-    ("Chickpeas", 2, 1.8),
-    ("Olive oil", 1.5, 8.0),
-    ("Sunflower oil", 0.5, 1.8),
-    ("Coffee", 1, 4.2),
-    ("Yogurt", 12, 0.45),
-    ("Cheese", 1, 8.0),
-    ("Cooked ham or turkey", 1, 10.0),
-    ("Oats or cereal", 2, 1.8),
-    ("Sugar", 0.5, 1.2),
-    ("Salt and spices", 1, 1.5),
-    ("Frozen vegetables", 2, 2.0),
-    ("Cleaning basics", 1, 10.0),
-    ("Toiletries basics", 1, 12.0),
-    ("Bottled water", 4, 1.5),
-    ("Juice", 4, 1.3),
-    ("Beans", 2, 1.5),
-    ("Flour", 1, 1.1),
-    ("Breakfast biscuits", 2, 1.8),
-]
-
-
 def _observed_at() -> datetime:
     return datetime.now(UTC)
 
@@ -145,7 +111,8 @@ class SeedFoodBasketProvider:
     source_name = "Fallback supermarket basket seed"
 
     def fetch_city(self, city: SupportedCity) -> list[CostLineItem]:
-        base_total = sum(quantity * price for _, quantity, price in FOOD_BASKET)
+        basket = canonical_food_basket()
+        base_total = basket.seed_monthly_total_eur()
         total = round(base_total * CITY_FACTORS[city.key], 2)
         return [
             CostLineItem(
@@ -155,20 +122,26 @@ class SeedFoodBasketProvider:
                 currency=city.currency,
                 data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
-                source_url=INE_API_URL,
+                source_url=MAPA_FOOD_PANEL_URL,
                 observed_at=_observed_at(),
                 confidence=Confidence.LOW,
                 methodology=(
-                    "Fixed 35-item one-adult monthly basket. Current implementation "
-                    "uses a seed price matrix and city factor; supermarket adapters "
-                    "for Mercadona, Carrefour and Dia/Alcampo should replace item "
-                    "prices during daily refreshes."
+                    f"Fixed {len(basket.items)}-item one-adult monthly canonical "
+                    "basket. Current implementation uses seed unit prices and a "
+                    "city factor; supermarket adapters for Mercadona, Carrefour, "
+                    "Dia and Alcampo should replace item prices during daily "
+                    "refreshes."
                 ),
                 details={
-                    "basket_items": len(FOOD_BASKET),
-                    "available_items": len(FOOD_BASKET),
+                    "basket_version": basket.version,
+                    "basket_items": len(basket.items),
+                    "required_items": basket.required_item_count,
+                    "optional_items": basket.optional_item_count,
+                    "available_items": len(basket.items),
                     "missing_products": 0,
-                    "target_stores": ["Mercadona", "Carrefour", "Dia/Alcampo"],
+                    "aggregation_method": basket.aggregation_method,
+                    "source_basis": [source.name for source in basket.source_basis],
+                    "target_stores": ["Mercadona", "Carrefour", "Dia", "Alcampo"],
                 },
             )
         ]
