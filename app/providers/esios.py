@@ -19,6 +19,7 @@ class EsiosElectricityProvider:
         monthly_kwh: float,
         fixed_monthly_eur: float,
         lookback_days: int,
+        geo_name: str | None = "Península",
         client: httpx.Client | None = None,
     ) -> None:
         self.api_token = api_token
@@ -26,6 +27,7 @@ class EsiosElectricityProvider:
         self.monthly_kwh = monthly_kwh
         self.fixed_monthly_eur = fixed_monthly_eur
         self.lookback_days = lookback_days
+        self.geo_name = geo_name
         self.client = client
         self._cached_payload: dict[str, Any] | None = None
 
@@ -73,7 +75,10 @@ class EsiosElectricityProvider:
         payload: dict[str, Any],
     ) -> CostLineItem:
         indicator = payload.get("indicator", {})
-        values = indicator.get("values", [])
+        values = _filter_values_by_geo(
+            indicator.get("values", []),
+            self.geo_name,
+        )
         numeric_values = [
             float(value["value"])
             for value in values
@@ -83,7 +88,7 @@ class EsiosElectricityProvider:
             raise ValueError("No numeric eSIOS indicator values returned")
 
         average_raw = sum(numeric_values) / len(numeric_values)
-        unit = indicator.get("unit") or indicator.get("unit_name") or ""
+        unit = _indicator_unit(indicator)
         average_eur_per_kwh = _normalise_to_eur_per_kwh(average_raw, unit)
         variable_amount = average_eur_per_kwh * self.monthly_kwh
         monthly_amount = round(variable_amount + self.fixed_monthly_eur, 2)
@@ -106,6 +111,7 @@ class EsiosElectricityProvider:
             ),
             details={
                 "indicator_id": self.indicator_id,
+                "geo_name": self.geo_name,
                 "raw_unit": unit,
                 "raw_values": len(numeric_values),
                 "average_raw_value": round(average_raw, 6),
@@ -136,6 +142,7 @@ class EsiosElectricityProvider:
                 "fallback_reason": reason,
                 "target_source": self.source_name,
                 "indicator_id": self.indicator_id,
+                "geo_name": self.geo_name,
                 "monthly_kwh": self.monthly_kwh,
                 "seed_variable_eur_per_kwh": 0.19,
                 "fixed_monthly_eur": self.fixed_monthly_eur,
@@ -148,6 +155,31 @@ def _normalise_to_eur_per_kwh(value: float, unit: str) -> float:
     if "mwh" in unit_lower or value > 10:
         return value / 1000
     return value
+
+
+def _indicator_unit(indicator: dict[str, Any]) -> str:
+    direct_unit = indicator.get("unit") or indicator.get("unit_name")
+    if direct_unit:
+        return str(direct_unit)
+
+    magnitud = indicator.get("magnitud") or []
+    if magnitud:
+        name = magnitud[0].get("name")
+        if name:
+            return str(name)
+
+    return ""
+
+
+def _filter_values_by_geo(
+    values: list[dict[str, Any]],
+    geo_name: str | None,
+) -> list[dict[str, Any]]:
+    if not geo_name:
+        return values
+
+    filtered = [value for value in values if value.get("geo_name") == geo_name]
+    return filtered or values
 
 
 def _latest_observed_at(values: list[dict[str, Any]]) -> datetime:

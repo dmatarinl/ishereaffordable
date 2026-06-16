@@ -33,6 +33,7 @@ def default_providers() -> list[CostProvider]:
             monthly_kwh=settings.electricity_monthly_kwh,
             fixed_monthly_eur=settings.electricity_fixed_monthly_eur,
             lookback_days=settings.esios_lookback_days,
+            geo_name="Península",
         ),
         SeedUtilityProvider(),
         SeedMunicipalTaxProvider(),
