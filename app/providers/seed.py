@@ -148,29 +148,12 @@ class SeedFoodBasketProvider:
 
 
 class SeedUtilityProvider:
-    source_id = "seed_utilities"
-    source_name = "Fallback utilities seed"
+    source_id = "seed_water"
+    source_name = "Fallback water seed"
 
     def fetch_city(self, city: SupportedCity) -> list[CostLineItem]:
-        gas = round((250 * 0.065) + 8.0, 2)
         water = WATER_SEEDS[city.key]
         return [
-            CostLineItem(
-                category=CostCategory.GAS,
-                label="Gas",
-                monthly_amount=gas,
-                currency=city.currency,
-                data_mode=DataMode.MANUAL_SEED,
-                source_name=self.source_name,
-                source_url="https://www.boe.es/",
-                observed_at=_observed_at(),
-                confidence=Confidence.LOW,
-                methodology=(
-                    "250 kWh/month default usage with a maintained regulated-tariff "
-                    "seed. Replace with official TUR data by quarter."
-                ),
-                details={"monthly_kwh": 250, "seed_variable_eur_per_kwh": 0.065},
-            ),
             CostLineItem(
                 category=CostCategory.WATER,
                 label="Water",

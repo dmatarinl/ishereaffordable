@@ -12,6 +12,7 @@ from app.electricity.profiles import (
     ElectricityProfile,
     electricity_profile_catalog,
 )
+from app.gas.profiles import DEFAULT_GAS_PROFILE, GasProfile, gas_profile_catalog
 from app.services.affordability import AffordabilityService
 from app.services.refresh import ensure_seed_data
 from app.sources.catalog import source_rules
@@ -23,6 +24,7 @@ calculator = AffordabilityCalculator(
 )
 affordability_service = AffordabilityService(repository, calculator)
 DEFAULT_ELECTRICITY_PROFILE_QUERY = Query(DEFAULT_ELECTRICITY_PROFILE)
+DEFAULT_GAS_PROFILE_QUERY = Query(DEFAULT_GAS_PROFILE)
 SAFETY_MARGIN_PERCENT_QUERY = Query(
     settings.safety_margin_percent,
     ge=0,
@@ -74,11 +76,20 @@ def electricity_profiles():
     }
 
 
+@app.get("/api/gas/profiles")
+def gas_profiles():
+    return {
+        "default": DEFAULT_GAS_PROFILE.value,
+        "profiles": gas_profile_catalog(),
+    }
+
+
 @app.get("/api/affordability")
 def affordability(
     city: str = Query(..., min_length=2, examples=["Madrid"]),
     currency: str = Query(settings.default_currency, min_length=3, max_length=3),
     electricity_profile: ElectricityProfile = DEFAULT_ELECTRICITY_PROFILE_QUERY,
+    gas_profile: GasProfile = DEFAULT_GAS_PROFILE_QUERY,
     safety_margin_percent: float = SAFETY_MARGIN_PERCENT_QUERY,
 ):
     if currency.upper() != settings.default_currency:
@@ -94,9 +105,10 @@ def affordability(
             detail="City is not supported in the Spain MVP.",
         )
 
-    estimate = affordability_service.estimate_with_electricity_profile(
+    estimate = affordability_service.estimate_with_profiles(
         supported_city,
         electricity_profile,
+        gas_profile,
         safety_margin_percent,
     )
     if estimate is None:

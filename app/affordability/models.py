@@ -58,7 +58,7 @@ class CityCostInputs(BaseModel):
             "One adult household",
             "Long-term one-bedroom rental",
             "No private car ownership",
-            "250 kWh/month gas usage where gas is applicable",
+            "Gas usage depends on the selected household gas profile",
             "6 m3/month water usage",
             "Trash tax converted from annual to monthly cost",
         ]
@@ -81,6 +81,7 @@ class AffordabilityEstimate(BaseModel):
     currency: str
     profile: str
     electricity_profile: str
+    gas_profile: str
     safety_margin_percent: float
     monthly_baseline: float
     monthly_safety_margin: float

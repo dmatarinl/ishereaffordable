@@ -5,7 +5,9 @@ from app.affordability.models import CostLineItem
 from app.cities import SUPPORTED_CITIES, SupportedCity, get_supported_city
 from app.core.config import settings
 from app.electricity.profiles import ElectricityProfile, apply_electricity_profile
+from app.gas.profiles import GasBillAssumptions, GasProfile, apply_gas_profile
 from app.providers.base import CostProvider
+from app.providers.boe_gas import BoeGasTurProvider
 from app.providers.esios import EsiosElectricityProvider
 from app.providers.seed import (
     SeedFoodBasketProvider,
@@ -34,6 +36,19 @@ def default_providers() -> list[CostProvider]:
             lookback_days=settings.esios_lookback_days,
             default_profile=settings.electricity_default_profile,
             geo_name="Península",
+        ),
+        BoeGasTurProvider(
+            source_url=settings.boe_gas_tur_url,
+            user_agent=settings.source_user_agent,
+            default_profile=settings.gas_default_profile,
+            gas_bill_assumptions=GasBillAssumptions(
+                hydrocarbons_tax_eur_per_kwh=(
+                    settings.gas_hydrocarbons_tax_eur_per_kwh
+                ),
+                vat_rate=settings.gas_vat_rate_percent / 100,
+                meter_rental_monthly_eur=settings.gas_meter_rental_monthly_eur,
+            ),
+            enable_discovery=settings.boe_gas_enable_discovery,
         ),
         SeedUtilityProvider(),
         SeedMunicipalTaxProvider(),
@@ -68,17 +83,23 @@ def refresh_all(
 
 
 def ensure_seed_data(repository: CostObservationRepository) -> None:
-    if not repository.has_any_observations():
+    if not repository.has_any_observations() or _needs_profile_ready_observations(
+        repository
+    ):
         refresh_all(repository)
 
 
 def apply_request_profiles(
     observations: list[CostLineItem],
     electricity_profile: ElectricityProfile,
+    gas_profile: GasProfile,
+    gas_bill_assumptions: GasBillAssumptions,
 ) -> list[CostLineItem]:
     return [
         apply_electricity_profile(item, electricity_profile)
         if item.category.value == "electricity"
+        else apply_gas_profile(item, gas_profile, gas_bill_assumptions)
+        if item.category.value == "gas"
         else item
         for item in observations
     ]
@@ -131,3 +152,19 @@ def _refresh_supported_city(
         observations=len(observations),
         warnings=warnings,
     )
+
+
+def _needs_profile_ready_observations(repository: CostObservationRepository) -> bool:
+    observations = repository.latest_city_observations(SUPPORTED_CITIES[0].key)
+    gas = next(
+        (
+            item
+            for item in observations
+            if item.category.value == "gas"
+        ),
+        None,
+    )
+    if gas is None:
+        return True
+
+    return "gas_terms" not in gas.details

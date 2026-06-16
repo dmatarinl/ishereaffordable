@@ -25,7 +25,7 @@ as official.
 | --- | --- | --- | --- | --- |
 | Rent | Idealista Search API or approved real-estate API | Permitted portal scrape | Manual seed | 7 days |
 | Electricity | eSIOS API | None | Manual seed | 1 day |
-| Gas | Official TUR, BOE, or CNMC data | None | Manual seed | 90 days |
+| Gas | BOE OpenData gas TUR resolution discovery | None | Manual seed | 90 days |
 | Water | Municipal/provider tariff data | Permitted provider/city scrape | Manual seed | 180 days |
 | Trash tax | Municipal ordinance/open data | Permitted city tax-page scrape | Manual seed | 365 days |
 | Food | Supermarket API/feed | Permitted supermarket scrape | Manual basket seed | 7 days |
@@ -73,6 +73,10 @@ as official.
   reuse it for every supported city.
 - eSIOS refreshes should run at most on the scheduled cache-refresh cadence
   unless there is a clear need to backfill missing data.
+- Gas TUR refreshes should use BOE OpenData daily summaries to discover the
+  latest resolution, parse the official BOE document, and show tax assumptions
+  separately from the source tariff because BOE publishes TUR prices before
+  taxes.
 
 ## Non-Goals
 

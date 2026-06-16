@@ -12,6 +12,7 @@ def test_affordability_endpoint_returns_source_breakdown() -> None:
 
     assert payload["city"] == "Madrid"
     assert payload["electricity_profile"] == "standard"
+    assert payload["gas_profile"] == "standard"
     assert payload["monthly_required"] > payload["monthly_baseline"]
     assert len(payload["line_items"]) == 8
     assert {item["category"] for item in payload["line_items"]} >= {
@@ -45,6 +46,21 @@ def test_electricity_profiles_endpoint_lists_supported_profiles() -> None:
     }
 
 
+def test_gas_profiles_endpoint_lists_supported_profiles() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/gas/profiles")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["default"] == "standard"
+    assert {profile["key"] for profile in payload["profiles"]} == {
+        "low",
+        "standard",
+        "heating",
+    }
+
+
 def test_affordability_endpoint_applies_electricity_profile() -> None:
     with TestClient(app) as client:
         light_response = client.get(
@@ -74,6 +90,37 @@ def test_affordability_endpoint_applies_electricity_profile() -> None:
     assert high_payload["electricity_profile"] == "high"
     assert light_electricity["monthly_amount"] < high_electricity["monthly_amount"]
     assert light_payload["monthly_required"] < high_payload["monthly_required"]
+
+
+def test_affordability_endpoint_applies_gas_profile() -> None:
+    with TestClient(app) as client:
+        low_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&gas_profile=low"
+        )
+        heating_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&gas_profile=heating"
+        )
+
+    assert low_response.status_code == 200
+    assert heating_response.status_code == 200
+
+    low_payload = low_response.json()
+    heating_payload = heating_response.json()
+    low_gas = next(
+        item
+        for item in low_payload["line_items"]
+        if item["category"] == "gas"
+    )
+    heating_gas = next(
+        item
+        for item in heating_payload["line_items"]
+        if item["category"] == "gas"
+    )
+
+    assert low_payload["gas_profile"] == "low"
+    assert heating_payload["gas_profile"] == "heating"
+    assert low_gas["monthly_amount"] < heating_gas["monthly_amount"]
+    assert low_payload["monthly_required"] < heating_payload["monthly_required"]
 
 
 def test_affordability_endpoint_applies_safety_margin_percent() -> None:
@@ -138,12 +185,15 @@ def test_sources_rules_endpoint_returns_policy_catalog() -> None:
     rules = response.json()["rules"]
     rent = next(rule for rule in rules if rule["category"] == "rent")
     electricity = next(rule for rule in rules if rule["category"] == "electricity")
+    gas = next(rule for rule in rules if rule["category"] == "gas")
 
     assert rent["first_choice"] == "Idealista Search API or approved real-estate API"
     assert "manual_seed" in rent["allowed_data_modes"]
     assert rent["freshness_days"] == 7
     assert electricity["first_choice"] == "eSIOS API"
     assert electricity["freshness_days"] == 1
+    assert gas["first_choice"] == "BOE OpenData gas TUR resolution discovery"
+    assert gas["freshness_days"] == 90
 
 
 def test_unsupported_city_is_rejected() -> None:

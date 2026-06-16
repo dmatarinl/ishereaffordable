@@ -58,7 +58,7 @@ SOURCE_RULES = {
     CostCategory.GAS: SourceRule(
         category=CostCategory.GAS,
         label="Gas",
-        first_choice="Official TUR, BOE, or CNMC data",
+        first_choice="BOE OpenData gas TUR resolution discovery",
         second_choice=None,
         fallback="Manual gas seed",
         allowed_data_modes=[
@@ -68,7 +68,10 @@ SOURCE_RULES = {
         ],
         freshness_days=90,
         stale_confidence=Confidence.LOW,
-        user_guidance="Gas regulated tariff data should be refreshed quarterly.",
+        user_guidance=(
+            "Gas regulated tariff terms should come from BOE OpenData discovery, "
+            "then be converted to a final bill with explicit tax assumptions."
+        ),
     ),
     CostCategory.WATER: SourceRule(
         category=CostCategory.WATER,

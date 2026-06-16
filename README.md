@@ -117,7 +117,10 @@ Source integrations:
 - Electricity: eSIOS/PVPC data when `ESIOS_API_TOKEN` is configured. Without
   that token, the app keeps a low-confidence electricity fallback so the MVP
   remains usable.
-- Gas: official TUR data.
+- Gas: official BOE TUR data from BOE OpenData summary discovery. If
+  `BOE_GAS_TUR_URL` is set, that specific BOE XML/HTML/TXT/PDF document is used
+  as an override. Without BOE access, the app keeps a low-confidence gas
+  fallback so refreshes remain usable.
 - Water and trash tax: municipal/provider tariffs.
 - Food: fixed basket refreshed from supermarket adapters for Mercadona,
   Carrefour, and Dia/Alcampo where allowed by terms and robots rules.
@@ -160,6 +163,30 @@ The monthly electricity line item is no longer a plain energy-term estimate. It
 uses the official eSIOS PVPC signal for Península and then applies maintained
 2.0TD bill assumptions for power term, meter rental, electricity tax, and VAT.
 
+To enable BOE gas TUR:
+
+1. Keep `BOE_GAS_ENABLE_DISCOVERY=true` so the refresh job discovers the latest
+   BOE gas TUR resolution from `/datosabiertos/api/boe/sumario/{fecha}`.
+2. Optionally set `BOE_GAS_TUR_URL` to a known BOE XML, HTML, TXT, or PDF URL to
+   force a specific document during development.
+3. Set `GAS_DEFAULT_PROFILE=standard` unless another profile should be cached by
+   default.
+4. Review `GAS_VAT_RATE_PERCENT`, `GAS_HYDROCARBONS_TAX_EUR_PER_KWH`, and
+   `GAS_METER_RENTAL_MONTHLY_EUR` when tax rules change.
+5. Run `python -m app.jobs.refresh_all`.
+
+The BOE TUR table publishes prices before taxes. The app exposes three gas
+usage profiles and converts the official terms into an estimated final monthly
+bill:
+
+- `low`: 120 kWh/month, TUR.1
+- `standard`: 250 kWh/month, TUR.1
+- `heating`: 8,000 kWh/year averaged monthly, TUR.2
+
+The gas bill estimate applies maintained assumptions for hydrocarbons tax, VAT,
+and meter rental. These are shown in the line-item details so BOE source data
+and bill assumptions are not confused.
+
 ## Deployment
 
 The repo includes `render.yaml` and `Procfile`.
@@ -186,6 +213,12 @@ ESIOS_API_TOKEN=
 ESIOS_PVPC_INDICATOR_ID=1001
 ESIOS_LOOKBACK_DAYS=30
 ELECTRICITY_DEFAULT_PROFILE=standard
+BOE_GAS_TUR_URL=
+BOE_GAS_ENABLE_DISCOVERY=true
+GAS_DEFAULT_PROFILE=standard
+GAS_VAT_RATE_PERCENT=21
+GAS_HYDROCARBONS_TAX_EUR_PER_KWH=0.00234
+GAS_METER_RENTAL_MONTHLY_EUR=0
 ENABLE_SUPERMARKET_SCRAPING=false
 SOURCE_USER_AGENT="IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"
 ```
