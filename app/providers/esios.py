@@ -27,6 +27,7 @@ class EsiosElectricityProvider:
         self.fixed_monthly_eur = fixed_monthly_eur
         self.lookback_days = lookback_days
         self.client = client
+        self._cached_payload: dict[str, Any] | None = None
 
     def fetch_city(self, city: SupportedCity) -> list[CostLineItem]:
         if not self.api_token:
@@ -39,6 +40,9 @@ class EsiosElectricityProvider:
             return [self._fallback_item(city, f"eSIOS request failed: {error}")]
 
     def _fetch_indicator_values(self) -> dict[str, Any]:
+        if self._cached_payload is not None:
+            return self._cached_payload
+
         now = datetime.now(UTC)
         start = now - timedelta(days=self.lookback_days)
         url = f"{ESIOS_API_URL.rstrip('/')}/indicators/{self.indicator_id}"
@@ -60,7 +64,8 @@ class EsiosElectricityProvider:
                 response = client.get(url, headers=headers, params=params)
 
         response.raise_for_status()
-        return response.json()
+        self._cached_payload = response.json()
+        return self._cached_payload
 
     def _item_from_payload(
         self,

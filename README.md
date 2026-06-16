@@ -131,8 +131,17 @@ To enable eSIOS electricity:
 
 1. Request a personal token from the official eSIOS API documentation site.
 2. Set `ESIOS_API_TOKEN` in `.env` or production environment variables.
-3. Run `python -m app.jobs.refresh_all`.
-4. Check `/api/sources/status` and the electricity line item in the UI.
+3. Keep the token server-side only. The browser must never call eSIOS
+   directly.
+4. Run `python -m app.jobs.refresh_all`.
+5. Check `/api/sources/status` and the electricity line item in the UI.
+
+The app is designed to stay within the eSIOS public-access guidance:
+
+- public users read cached data from our server, not from REE directly
+- scheduled refresh jobs perform the source fetches
+- one `refresh_all` run reuses a single eSIOS response across all cities in the
+  current national-PVPC model
 
 ## Deployment
 

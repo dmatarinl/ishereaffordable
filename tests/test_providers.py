@@ -63,8 +63,10 @@ class FakeClient:
     def __init__(self, payload: dict) -> None:
         self.payload = payload
         self.last_request = None
+        self.calls = 0
 
     def get(self, url: str, headers: dict, params: dict) -> FakeResponse:
+        self.calls += 1
         self.last_request = {"url": url, "headers": headers, "params": params}
         return FakeResponse(self.payload)
 
@@ -133,3 +135,34 @@ def test_esios_provider_calculates_from_indicator_values() -> None:
     assert item.details["raw_values"] == 2
     assert item.details["average_eur_per_kwh"] == 0.15
     assert client.last_request["headers"]["x-api-key"] == "token"
+
+
+def test_esios_provider_reuses_one_cached_response_across_cities() -> None:
+    madrid = get_supported_city("Madrid")
+    valencia = get_supported_city("Valencia")
+    assert madrid is not None
+    assert valencia is not None
+    payload = {
+        "indicator": {
+            "unit": "EUR/MWh",
+            "values": [
+                {"value": 100, "datetime": "2026-06-01T00:00:00+00:00"},
+                {"value": 200, "datetime": "2026-06-02T00:00:00+00:00"},
+            ],
+        }
+    }
+    client = FakeClient(payload)
+    provider = EsiosElectricityProvider(
+        api_token="token",
+        indicator_id=1001,
+        monthly_kwh=180,
+        fixed_monthly_eur=14,
+        lookback_days=30,
+        client=client,
+    )
+
+    madrid_item = provider.fetch_city(madrid)[0]
+    valencia_item = provider.fetch_city(valencia)[0]
+
+    assert madrid_item.monthly_amount == valencia_item.monthly_amount == 41
+    assert client.calls == 1

@@ -50,7 +50,10 @@ SOURCE_RULES = {
         ],
         freshness_days=1,
         stale_confidence=Confidence.LOW,
-        user_guidance="Electricity should come from eSIOS and refresh daily.",
+        user_guidance=(
+            "Electricity should come from eSIOS, stay cached server-side, "
+            "and refresh daily without redundant city-by-city source calls."
+        ),
     ),
     CostCategory.GAS: SourceRule(
         category=CostCategory.GAS,

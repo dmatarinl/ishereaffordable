@@ -54,6 +54,25 @@ as official.
   future admin screens can render the same policy.
 - The system MUST keep safety margin as `calculated`; it must never be treated
   as sourced data.
+- The system MUST keep personal API tokens on the server side only; they must
+  never be exposed to public clients or committed to version control.
+- The system MUST serve public affordability requests from cached observations
+  stored on our server, not by calling source APIs directly during user page
+  loads.
+- The system MUST avoid redundant refresh calls to the same source when one
+  shared response can be reused safely across multiple cities.
+
+## Source-Specific Notes
+
+- eSIOS tokens are personal to the requester and are allowed only for
+  server-side use.
+- eSIOS-backed public pages must read electricity data from our cache database,
+  never directly from REE systems in the browser.
+- Because the current PVPC electricity model is national rather than
+  city-specific, one refresh run should fetch the eSIOS indicator once and
+  reuse it for every supported city.
+- eSIOS refreshes should run at most on the scheduled cache-refresh cadence
+  unless there is a clear need to backfill missing data.
 
 ## Non-Goals
 
