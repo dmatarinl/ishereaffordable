@@ -22,9 +22,8 @@ def test_seed_providers_cover_all_core_categories() -> None:
         EsiosElectricityProvider(
             api_token=None,
             indicator_id=1001,
-            monthly_kwh=180,
-            fixed_monthly_eur=14,
             lookback_days=30,
+            default_profile="standard",
             geo_name="Península",
         ),
         SeedUtilityProvider(),
@@ -79,17 +78,17 @@ def test_esios_provider_uses_fallback_without_token() -> None:
     item = EsiosElectricityProvider(
         api_token=None,
         indicator_id=1001,
-        monthly_kwh=180,
-        fixed_monthly_eur=14,
         lookback_days=30,
+        default_profile="standard",
         geo_name="Península",
     ).fetch_city(city)[0]
 
     assert item.category == CostCategory.ELECTRICITY
-    assert item.monthly_amount == 48.2
+    assert item.monthly_amount == 53.91
     assert item.confidence == Confidence.LOW
     assert item.data_mode == DataMode.MANUAL_SEED
     assert item.details["fallback_reason"] == "Missing ESIOS_API_TOKEN"
+    assert item.details["electricity_profile"] == "standard"
 
 
 def test_seed_food_provider_uses_canonical_basket() -> None:
@@ -124,19 +123,20 @@ def test_esios_provider_calculates_from_indicator_values() -> None:
     item = EsiosElectricityProvider(
         api_token="token",
         indicator_id=1001,
-        monthly_kwh=180,
-        fixed_monthly_eur=14,
         lookback_days=30,
+        default_profile="standard",
         geo_name="Península",
         client=client,
     ).fetch_city(city)[0]
 
     assert item.category == CostCategory.ELECTRICITY
-    assert item.monthly_amount == 41
-    assert item.confidence == Confidence.HIGH
+    assert item.monthly_amount == 44.75
+    assert item.confidence == Confidence.MEDIUM
     assert item.data_mode == DataMode.OFFICIAL_API
     assert item.details["raw_values"] == 2
     assert item.details["average_eur_per_kwh"] == 0.15
+    assert item.details["energy_term_eur"] == 27
+    assert item.details["power_term_eur"] == 7.42
     assert client.last_request["headers"]["x-api-key"] == "token"
 
 
@@ -158,9 +158,8 @@ def test_esios_provider_reuses_one_cached_response_across_cities() -> None:
     provider = EsiosElectricityProvider(
         api_token="token",
         indicator_id=1001,
-        monthly_kwh=180,
-        fixed_monthly_eur=14,
         lookback_days=30,
+        default_profile="standard",
         geo_name="Península",
         client=client,
     )
@@ -168,7 +167,7 @@ def test_esios_provider_reuses_one_cached_response_across_cities() -> None:
     madrid_item = provider.fetch_city(madrid)[0]
     valencia_item = provider.fetch_city(valencia)[0]
 
-    assert madrid_item.monthly_amount == valencia_item.monthly_amount == 41
+    assert madrid_item.monthly_amount == valencia_item.monthly_amount == 44.75
     assert client.calls == 1
 
 
@@ -207,9 +206,8 @@ def test_esios_provider_filters_to_peninsula_values() -> None:
     item = EsiosElectricityProvider(
         api_token="token",
         indicator_id=1001,
-        monthly_kwh=180,
-        fixed_monthly_eur=14,
         lookback_days=30,
+        default_profile="standard",
         geo_name="Península",
         client=client,
     ).fetch_city(city)[0]
@@ -218,4 +216,4 @@ def test_esios_provider_filters_to_peninsula_values() -> None:
     assert item.details["raw_values"] == 2
     assert item.details["average_raw_value"] == 150
     assert item.details["average_eur_per_kwh"] == 0.15
-    assert item.monthly_amount == 41
+    assert item.monthly_amount == 44.75

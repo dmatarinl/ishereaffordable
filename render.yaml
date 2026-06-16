@@ -16,10 +16,8 @@ services:
         value: 1001
       - key: ESIOS_LOOKBACK_DAYS
         value: 30
-      - key: ELECTRICITY_MONTHLY_KWH
-        value: 180
-      - key: ELECTRICITY_FIXED_MONTHLY_EUR
-        value: 14
+      - key: ELECTRICITY_DEFAULT_PROFILE
+        value: standard
       - key: ENABLE_SUPERMARKET_SCRAPING
         value: false
       - key: SOURCE_USER_AGENT
@@ -42,7 +40,5 @@ cronJobs:
         value: 1001
       - key: ESIOS_LOOKBACK_DAYS
         value: 30
-      - key: ELECTRICITY_MONTHLY_KWH
-        value: 180
-      - key: ELECTRICITY_FIXED_MONTHLY_EUR
-        value: 14
+      - key: ELECTRICITY_DEFAULT_PROFILE
+        value: standard

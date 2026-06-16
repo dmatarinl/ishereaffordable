@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from app.affordability.models import CostLineItem
 from app.cities import SUPPORTED_CITIES, SupportedCity, get_supported_city
 from app.core.config import settings
+from app.electricity.profiles import ElectricityProfile, apply_electricity_profile
 from app.providers.base import CostProvider
 from app.providers.esios import EsiosElectricityProvider
 from app.providers.seed import (
@@ -30,9 +31,8 @@ def default_providers() -> list[CostProvider]:
         EsiosElectricityProvider(
             api_token=settings.esios_api_token,
             indicator_id=settings.esios_pvpc_indicator_id,
-            monthly_kwh=settings.electricity_monthly_kwh,
-            fixed_monthly_eur=settings.electricity_fixed_monthly_eur,
             lookback_days=settings.esios_lookback_days,
+            default_profile=settings.electricity_default_profile,
             geo_name="Península",
         ),
         SeedUtilityProvider(),
@@ -70,6 +70,18 @@ def refresh_all(
 def ensure_seed_data(repository: CostObservationRepository) -> None:
     if not repository.has_any_observations():
         refresh_all(repository)
+
+
+def apply_request_profiles(
+    observations: list[CostLineItem],
+    electricity_profile: ElectricityProfile,
+) -> list[CostLineItem]:
+    return [
+        apply_electricity_profile(item, electricity_profile)
+        if item.category.value == "electricity"
+        else item
+        for item in observations
+    ]
 
 
 def _refresh_supported_city(

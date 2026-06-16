@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     esios_lookback_days: int = 30
     electricity_monthly_kwh: float = 180
     electricity_fixed_monthly_eur: float = 14
+    electricity_default_profile: str = "standard"
     enable_supermarket_scraping: bool = False
     source_user_agent: str = Field(
         default="IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"

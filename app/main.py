@@ -7,6 +7,11 @@ from fastapi.staticfiles import StaticFiles
 from app.affordability.calculator import AffordabilityCalculator
 from app.cities import SUPPORTED_CITIES, get_supported_city
 from app.core.config import settings
+from app.electricity.profiles import (
+    DEFAULT_ELECTRICITY_PROFILE,
+    ElectricityProfile,
+    electricity_profile_catalog,
+)
 from app.services.affordability import AffordabilityService
 from app.services.refresh import ensure_seed_data
 from app.sources.catalog import source_rules
@@ -17,6 +22,7 @@ calculator = AffordabilityCalculator(
     safety_margin_percent=settings.safety_margin_percent,
 )
 affordability_service = AffordabilityService(repository, calculator)
+DEFAULT_ELECTRICITY_PROFILE_QUERY = Query(DEFAULT_ELECTRICITY_PROFILE)
 
 
 @asynccontextmanager
@@ -55,10 +61,19 @@ def sources_rules():
     return {"rules": source_rules()}
 
 
+@app.get("/api/electricity/profiles")
+def electricity_profiles():
+    return {
+        "default": DEFAULT_ELECTRICITY_PROFILE.value,
+        "profiles": electricity_profile_catalog(),
+    }
+
+
 @app.get("/api/affordability")
 def affordability(
     city: str = Query(..., min_length=2, examples=["Madrid"]),
     currency: str = Query(settings.default_currency, min_length=3, max_length=3),
+    electricity_profile: ElectricityProfile = DEFAULT_ELECTRICITY_PROFILE_QUERY,
 ):
     if currency.upper() != settings.default_currency:
         raise HTTPException(
@@ -73,7 +88,10 @@ def affordability(
             detail="City is not supported in the Spain MVP.",
         )
 
-    estimate = affordability_service.estimate(supported_city)
+    estimate = affordability_service.estimate_with_electricity_profile(
+        supported_city,
+        electricity_profile,
+    )
     if estimate is None:
         raise HTTPException(
             status_code=503,

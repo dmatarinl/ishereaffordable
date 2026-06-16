@@ -19,9 +19,8 @@ class MockCostOfLivingProvider:
             EsiosElectricityProvider(
                 api_token=settings.esios_api_token,
                 indicator_id=settings.esios_pvpc_indicator_id,
-                monthly_kwh=settings.electricity_monthly_kwh,
-                fixed_monthly_eur=settings.electricity_fixed_monthly_eur,
                 lookback_days=settings.esios_lookback_days,
+                default_profile=settings.electricity_default_profile,
                 geo_name="Península",
             ),
             SeedUtilityProvider(),

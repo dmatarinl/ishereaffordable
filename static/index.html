@@ -89,7 +89,7 @@
 
       form {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr 1fr auto;
         gap: 12px;
         align-items: end;
         margin-bottom: 18px;
@@ -288,6 +288,10 @@
               City
               <select id="city" name="city"></select>
             </label>
+            <label>
+              Electricity profile
+              <select id="electricity-profile" name="electricity_profile"></select>
+            </label>
             <button type="submit">Calculate</button>
           </form>
 
@@ -299,6 +303,7 @@
     <script>
       const form = document.querySelector("#calculator-form");
       const citySelect = document.querySelector("#city");
+      const electricityProfileSelect = document.querySelector("#electricity-profile");
       const result = document.querySelector("#result");
 
       const formatMoney = (value, currency) =>
@@ -339,6 +344,18 @@
         citySelect.innerHTML = payload.cities
           .map((city) => `<option value="${city.key}">${city.name}</option>`)
           .join("");
+      }
+
+      async function loadElectricityProfiles() {
+        const response = await fetch("/api/electricity/profiles");
+        const payload = await response.json();
+        electricityProfileSelect.innerHTML = payload.profiles
+          .map(
+            (profile) =>
+              `<option value="${profile.key}">${profile.label} · ${profile.monthly_kwh} kWh/month</option>`,
+          )
+          .join("");
+        electricityProfileSelect.value = payload.default;
       }
 
       function renderWarnings(warnings) {
@@ -403,6 +420,7 @@
         const params = new URLSearchParams({
           city: citySelect.value,
           currency: "EUR",
+          electricity_profile: electricityProfileSelect.value,
         });
 
         result.hidden = false;
@@ -420,6 +438,7 @@
           <div>${estimate.city}, ${estimate.country}</div>
           <div class="amount">${formatMoney(estimate.monthly_required, estimate.currency)}</div>
           <div>per month</div>
+          <div class="source">${estimate.profile}</div>
           <div class="summary">
             <div class="metric"><span>Baseline</span><strong>${formatMoney(estimate.monthly_baseline, estimate.currency)}</strong></div>
             <div class="metric"><span>Safety margin</span><strong>${formatMoney(estimate.monthly_safety_margin, estimate.currency)}</strong></div>
@@ -437,7 +456,7 @@
         calculate();
       });
 
-      loadCities().then(calculate);
+      Promise.all([loadCities(), loadElectricityProfiles()]).then(calculate);
     </script>
   </body>
 </html>

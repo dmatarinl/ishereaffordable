@@ -52,6 +52,17 @@ class CityCostInputs(BaseModel):
     country: str
     currency: str
     line_items: list[CostLineItem]
+    household_profile: str = "Single adult, one-bedroom rental, no car, Spain MVP"
+    assumptions: list[str] = Field(
+        default_factory=lambda: [
+            "One adult household",
+            "Long-term one-bedroom rental",
+            "No private car ownership",
+            "250 kWh/month gas usage where gas is applicable",
+            "6 m3/month water usage",
+            "Trash tax converted from annual to monthly cost",
+        ]
+    )
 
 
 class SourceStatus(BaseModel):
@@ -69,6 +80,7 @@ class AffordabilityEstimate(BaseModel):
     country: str
     currency: str
     profile: str
+    electricity_profile: str
     monthly_baseline: float
     monthly_safety_margin: float
     monthly_required: float

@@ -79,24 +79,36 @@ class AffordabilityCalculator:
             city_key=costs.city_key,
             country=costs.country,
             currency=costs.currency,
-            profile="Single adult, one-bedroom rental, no car, Spain MVP",
+            profile=costs.household_profile,
+            electricity_profile=_electricity_profile_from_costs(costs),
             monthly_baseline=round(monthly_baseline, 2),
             monthly_safety_margin=round(monthly_safety_margin, 2),
             monthly_required=round(monthly_required, 2),
             annual_required=round(monthly_required * 12, 2),
             line_items=line_items,
-            assumptions=[
-                "One adult household",
-                "Long-term one-bedroom rental",
-                "No private car ownership",
-                "180 kWh/month electricity usage",
-                "250 kWh/month gas usage where gas is applicable",
-                "6 m3/month water usage",
-                "Trash tax converted from annual to monthly cost",
-            ],
+            assumptions=costs.assumptions,
             warnings=warnings,
             freshness={
                 item.category.value: item.cached_at or item.observed_at
                 for item in line_items
             },
         )
+
+
+def _electricity_profile_from_costs(costs: CityCostInputs) -> str:
+    electricity = next(
+        (
+            item
+            for item in costs.line_items
+            if item.category == CostCategory.ELECTRICITY
+        ),
+        None,
+    )
+    if electricity is None:
+        return "standard"
+
+    profile = electricity.details.get("electricity_profile")
+    if isinstance(profile, str) and profile:
+        return profile
+
+    return "standard"

@@ -5,6 +5,11 @@ import httpx
 
 from app.affordability.models import Confidence, CostCategory, CostLineItem, DataMode
 from app.cities import SupportedCity
+from app.electricity.profiles import (
+    DEFAULT_ELECTRICITY_PROFILE,
+    ElectricityProfile,
+    apply_electricity_profile,
+)
 from app.providers.seed import ESIOS_API_URL
 
 
@@ -16,17 +21,15 @@ class EsiosElectricityProvider:
         self,
         api_token: str | None,
         indicator_id: int,
-        monthly_kwh: float,
-        fixed_monthly_eur: float,
         lookback_days: int,
+        default_profile: str = DEFAULT_ELECTRICITY_PROFILE.value,
         geo_name: str | None = "Península",
         client: httpx.Client | None = None,
     ) -> None:
         self.api_token = api_token
         self.indicator_id = indicator_id
-        self.monthly_kwh = monthly_kwh
-        self.fixed_monthly_eur = fixed_monthly_eur
         self.lookback_days = lookback_days
+        self.default_profile = default_profile
         self.geo_name = geo_name
         self.client = client
         self._cached_payload: dict[str, Any] | None = None
@@ -90,24 +93,20 @@ class EsiosElectricityProvider:
         average_raw = sum(numeric_values) / len(numeric_values)
         unit = _indicator_unit(indicator)
         average_eur_per_kwh = _normalise_to_eur_per_kwh(average_raw, unit)
-        variable_amount = average_eur_per_kwh * self.monthly_kwh
-        monthly_amount = round(variable_amount + self.fixed_monthly_eur, 2)
-
-        return CostLineItem(
+        item = CostLineItem(
             category=CostCategory.ELECTRICITY,
             label="Electricity",
-            monthly_amount=monthly_amount,
+            monthly_amount=round(average_eur_per_kwh, 6),
             currency=city.currency,
             data_mode=DataMode.OFFICIAL_API,
             source_name=self.source_name,
             source_url=f"{ESIOS_API_URL.rstrip('/')}/indicators/{self.indicator_id}",
             observed_at=_latest_observed_at(values),
-            confidence=Confidence.HIGH,
+            confidence=Confidence.MEDIUM,
             methodology=(
                 f"Average eSIOS PVPC indicator value over the last "
-                f"{self.lookback_days} days, converted to EUR/kWh and applied to "
-                f"{self.monthly_kwh:g} kWh/month plus "
-                f"{self.fixed_monthly_eur:g} EUR/month fixed estimate."
+                f"{self.lookback_days} days for {self.geo_name or 'all geographies'}, "
+                "converted to EUR/kWh before applying household bill assumptions."
             ),
             details={
                 "indicator_id": self.indicator_id,
@@ -116,17 +115,15 @@ class EsiosElectricityProvider:
                 "raw_values": len(numeric_values),
                 "average_raw_value": round(average_raw, 6),
                 "average_eur_per_kwh": round(average_eur_per_kwh, 6),
-                "monthly_kwh": self.monthly_kwh,
-                "fixed_monthly_eur": self.fixed_monthly_eur,
             },
         )
+        return apply_electricity_profile(item, _default_profile(self.default_profile))
 
     def _fallback_item(self, city: SupportedCity, reason: str) -> CostLineItem:
-        electricity = round((self.monthly_kwh * 0.19) + self.fixed_monthly_eur, 2)
-        return CostLineItem(
+        item = CostLineItem(
             category=CostCategory.ELECTRICITY,
             label="Electricity",
-            monthly_amount=electricity,
+            monthly_amount=0.19,
             currency=city.currency,
             data_mode=DataMode.MANUAL_SEED,
             source_name="Fallback electricity seed pending eSIOS",
@@ -134,20 +131,19 @@ class EsiosElectricityProvider:
             observed_at=datetime.now(UTC),
             confidence=Confidence.LOW,
             methodology=(
-                f"{self.monthly_kwh:g} kWh/month default usage with a maintained "
-                "PVPC-style seed price and fixed component. Configure "
-                "ESIOS_API_TOKEN to replace this with official eSIOS data."
+                "Fallback PVPC-style unit price before applying household bill "
+                "assumptions. Configure ESIOS_API_TOKEN to replace this with "
+                "official eSIOS data."
             ),
             details={
                 "fallback_reason": reason,
                 "target_source": self.source_name,
                 "indicator_id": self.indicator_id,
                 "geo_name": self.geo_name,
-                "monthly_kwh": self.monthly_kwh,
                 "seed_variable_eur_per_kwh": 0.19,
-                "fixed_monthly_eur": self.fixed_monthly_eur,
             },
         )
+        return apply_electricity_profile(item, _default_profile(self.default_profile))
 
 
 def _normalise_to_eur_per_kwh(value: float, unit: str) -> float:
@@ -202,3 +198,7 @@ def _parse_datetime(value: str | None) -> datetime | None:
     except ValueError:
         return None
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def _default_profile(value: str):
+    return ElectricityProfile(value)

@@ -37,7 +37,9 @@ observations yet.
 
 ```bash
 curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR"
+curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR&electricity_profile=high"
 curl "http://127.0.0.1:8000/api/cities"
+curl "http://127.0.0.1:8000/api/electricity/profiles"
 curl "http://127.0.0.1:8000/api/sources/status"
 curl "http://127.0.0.1:8000/api/sources/rules"
 ```
@@ -143,6 +145,16 @@ The app is designed to stay within the eSIOS public-access guidance:
 - one `refresh_all` run reuses a single eSIOS response across all cities in the
   current national-PVPC model
 
+The electricity estimate now exposes three household usage profiles:
+
+- `light`: 120 kWh/month, 3.45 kW contracted power
+- `standard`: 180 kWh/month, 3.45 kW contracted power
+- `high`: 250 kWh/month, 4.6 kW contracted power
+
+The monthly electricity line item is no longer a plain energy-term estimate. It
+uses the official eSIOS PVPC signal for Península and then applies maintained
+2.0TD bill assumptions for power term, meter rental, electricity tax, and VAT.
+
 ## Deployment
 
 The repo includes `render.yaml` and `Procfile`.
@@ -168,8 +180,7 @@ IDEALISTA_API_KEY=
 ESIOS_API_TOKEN=
 ESIOS_PVPC_INDICATOR_ID=1001
 ESIOS_LOOKBACK_DAYS=30
-ELECTRICITY_MONTHLY_KWH=180
-ELECTRICITY_FIXED_MONTHLY_EUR=14
+ELECTRICITY_DEFAULT_PROFILE=standard
 ENABLE_SUPERMARKET_SCRAPING=false
 SOURCE_USER_AGENT="IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"
 ```

@@ -11,6 +11,7 @@ def test_affordability_endpoint_returns_source_breakdown() -> None:
     payload = response.json()
 
     assert payload["city"] == "Madrid"
+    assert payload["electricity_profile"] == "standard"
     assert payload["monthly_required"] > payload["monthly_baseline"]
     assert len(payload["line_items"]) == 8
     assert {item["category"] for item in payload["line_items"]} >= {
@@ -27,6 +28,52 @@ def test_affordability_endpoint_returns_source_breakdown() -> None:
     assert "observed" not in rent["source_name"].lower()
     assert safety_margin["data_mode"] == "calculated"
     assert payload["warnings"]
+
+
+def test_electricity_profiles_endpoint_lists_supported_profiles() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/electricity/profiles")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["default"] == "standard"
+    assert {profile["key"] for profile in payload["profiles"]} == {
+        "light",
+        "standard",
+        "high",
+    }
+
+
+def test_affordability_endpoint_applies_electricity_profile() -> None:
+    with TestClient(app) as client:
+        light_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&electricity_profile=light"
+        )
+        high_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&electricity_profile=high"
+        )
+
+    assert light_response.status_code == 200
+    assert high_response.status_code == 200
+
+    light_payload = light_response.json()
+    high_payload = high_response.json()
+    light_electricity = next(
+        item
+        for item in light_payload["line_items"]
+        if item["category"] == "electricity"
+    )
+    high_electricity = next(
+        item
+        for item in high_payload["line_items"]
+        if item["category"] == "electricity"
+    )
+
+    assert light_payload["electricity_profile"] == "light"
+    assert high_payload["electricity_profile"] == "high"
+    assert light_electricity["monthly_amount"] < high_electricity["monthly_amount"]
+    assert light_payload["monthly_required"] < high_payload["monthly_required"]
 
 
 def test_cities_endpoint_lists_spain_mvp_cities() -> None:
