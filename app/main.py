@@ -23,6 +23,11 @@ calculator = AffordabilityCalculator(
 )
 affordability_service = AffordabilityService(repository, calculator)
 DEFAULT_ELECTRICITY_PROFILE_QUERY = Query(DEFAULT_ELECTRICITY_PROFILE)
+SAFETY_MARGIN_PERCENT_QUERY = Query(
+    settings.safety_margin_percent,
+    ge=0,
+    le=100,
+)
 
 
 @asynccontextmanager
@@ -74,6 +79,7 @@ def affordability(
     city: str = Query(..., min_length=2, examples=["Madrid"]),
     currency: str = Query(settings.default_currency, min_length=3, max_length=3),
     electricity_profile: ElectricityProfile = DEFAULT_ELECTRICITY_PROFILE_QUERY,
+    safety_margin_percent: float = SAFETY_MARGIN_PERCENT_QUERY,
 ):
     if currency.upper() != settings.default_currency:
         raise HTTPException(
@@ -91,6 +97,7 @@ def affordability(
     estimate = affordability_service.estimate_with_electricity_profile(
         supported_city,
         electricity_profile,
+        safety_margin_percent,
     )
     if estimate is None:
         raise HTTPException(

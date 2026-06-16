@@ -81,6 +81,7 @@ class AffordabilityCalculator:
             currency=costs.currency,
             profile=costs.household_profile,
             electricity_profile=_electricity_profile_from_costs(costs),
+            safety_margin_percent=self.safety_margin_percent,
             monthly_baseline=round(monthly_baseline, 2),
             monthly_safety_margin=round(monthly_safety_margin, 2),
             monthly_required=round(monthly_required, 2),

@@ -81,6 +81,7 @@ class AffordabilityEstimate(BaseModel):
     currency: str
     profile: str
     electricity_profile: str
+    safety_margin_percent: float
     monthly_baseline: float
     monthly_safety_margin: float
     monthly_required: float

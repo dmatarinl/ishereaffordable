@@ -76,6 +76,42 @@ def test_affordability_endpoint_applies_electricity_profile() -> None:
     assert light_payload["monthly_required"] < high_payload["monthly_required"]
 
 
+def test_affordability_endpoint_applies_safety_margin_percent() -> None:
+    with TestClient(app) as client:
+        low_margin_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&safety_margin_percent=5"
+        )
+        high_margin_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&safety_margin_percent=15"
+        )
+
+    assert low_margin_response.status_code == 200
+    assert high_margin_response.status_code == 200
+
+    low_margin_payload = low_margin_response.json()
+    high_margin_payload = high_margin_response.json()
+    low_margin_item = next(
+        item
+        for item in low_margin_payload["line_items"]
+        if item["category"] == "safety_margin"
+    )
+    high_margin_item = next(
+        item
+        for item in high_margin_payload["line_items"]
+        if item["category"] == "safety_margin"
+    )
+
+    assert low_margin_payload["safety_margin_percent"] == 5
+    assert high_margin_payload["safety_margin_percent"] == 15
+    assert low_margin_payload["monthly_baseline"] == high_margin_payload[
+        "monthly_baseline"
+    ]
+    assert low_margin_item["monthly_amount"] < high_margin_item["monthly_amount"]
+    assert low_margin_payload["monthly_required"] < high_margin_payload[
+        "monthly_required"
+    ]
+
+
 def test_cities_endpoint_lists_spain_mvp_cities() -> None:
     with TestClient(app) as client:
         response = client.get("/api/cities")

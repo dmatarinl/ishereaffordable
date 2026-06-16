@@ -89,13 +89,13 @@
 
       form {
         display: grid;
-        grid-template-columns: 1fr 1fr auto;
+        grid-template-columns: 1fr;
         gap: 12px;
         align-items: end;
         margin-bottom: 18px;
       }
 
-      label {
+      .field {
         display: grid;
         gap: 8px;
         font-size: 13px;
@@ -104,13 +104,15 @@
       }
 
       select,
-      button {
+      button,
+      input {
         min-height: 46px;
         border-radius: 6px;
         font: inherit;
       }
 
-      select {
+      select,
+      input {
         width: 100%;
         border: 1px solid var(--line);
         padding: 0 12px;
@@ -129,6 +131,54 @@
 
       button:hover {
         background: var(--accent-dark);
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--soft);
+      }
+
+      .segmented.safety {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .segmented input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .segmented label {
+        min-height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 6px;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 850;
+        text-align: center;
+      }
+
+      .segmented label:has(input:checked) {
+        background: #fff;
+        color: var(--accent-dark);
+        box-shadow: 0 1px 4px rgb(20 20 20 / 10%);
+      }
+
+      .custom-margin[hidden] {
+        display: none;
       }
 
       .result[hidden] {
@@ -256,6 +306,7 @@
         }
 
         form,
+        .settings-grid,
         .summary {
           grid-template-columns: 1fr;
         }
@@ -284,14 +335,67 @@
 
         <section class="panel" aria-label="Affordability calculator">
           <form id="calculator-form">
-            <label>
+            <label class="field">
               City
               <select id="city" name="city"></select>
             </label>
-            <label>
-              Electricity profile
-              <select id="electricity-profile" name="electricity_profile"></select>
-            </label>
+            <div class="settings-grid">
+              <div class="field">
+                <span>Electricity profile</span>
+                <div
+                  class="segmented"
+                  id="electricity-profile"
+                  role="radiogroup"
+                  aria-label="Electricity profile"
+                ></div>
+              </div>
+              <div class="field">
+                <span>Safety margin</span>
+                <div
+                  class="segmented safety"
+                  id="safety-margin"
+                  role="radiogroup"
+                  aria-label="Safety margin"
+                >
+                  <label>
+                    <input type="radio" name="safety_margin_option" value="5" />
+                    5%
+                  </label>
+                  <label>
+                    <input type="radio" name="safety_margin_option" value="10" />
+                    10%
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="safety_margin_option"
+                      value="15"
+                      checked
+                    />
+                    15%
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="safety_margin_option"
+                      value="custom"
+                    />
+                    Custom
+                  </label>
+                </div>
+                <input
+                  class="custom-margin"
+                  id="custom-safety-margin"
+                  name="custom_safety_margin"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value="15"
+                  hidden
+                />
+              </div>
+            </div>
             <button type="submit">Calculate</button>
           </form>
 
@@ -303,7 +407,8 @@
     <script>
       const form = document.querySelector("#calculator-form");
       const citySelect = document.querySelector("#city");
-      const electricityProfileSelect = document.querySelector("#electricity-profile");
+      const electricityProfileGroup = document.querySelector("#electricity-profile");
+      const customSafetyMarginInput = document.querySelector("#custom-safety-margin");
       const result = document.querySelector("#result");
 
       const formatMoney = (value, currency) =>
@@ -349,13 +454,37 @@
       async function loadElectricityProfiles() {
         const response = await fetch("/api/electricity/profiles");
         const payload = await response.json();
-        electricityProfileSelect.innerHTML = payload.profiles
+        electricityProfileGroup.innerHTML = payload.profiles
           .map(
             (profile) =>
-              `<option value="${profile.key}">${profile.label} · ${profile.monthly_kwh} kWh/month</option>`,
+              `<label>
+                <input
+                  type="radio"
+                  name="electricity_profile"
+                  value="${profile.key}"
+                  ${profile.key === payload.default ? "checked" : ""}
+                />
+                ${profile.label}
+              </label>`,
           )
           .join("");
-        electricityProfileSelect.value = payload.default;
+      }
+
+      function selectedRadioValue(name) {
+        return document.querySelector(`input[name="${name}"]:checked`)?.value;
+      }
+
+      function selectedSafetyMargin() {
+        const option = selectedRadioValue("safety_margin_option");
+        if (option === "custom") {
+          return customSafetyMarginInput.value || "0";
+        }
+        return option || "15";
+      }
+
+      function updateCustomSafetyMarginVisibility() {
+        const isCustom = selectedRadioValue("safety_margin_option") === "custom";
+        customSafetyMarginInput.hidden = !isCustom;
       }
 
       function renderWarnings(warnings) {
@@ -420,7 +549,8 @@
         const params = new URLSearchParams({
           city: citySelect.value,
           currency: "EUR",
-          electricity_profile: electricityProfileSelect.value,
+          electricity_profile: selectedRadioValue("electricity_profile"),
+          safety_margin_percent: selectedSafetyMargin(),
         });
 
         result.hidden = false;
@@ -455,6 +585,20 @@
         event.preventDefault();
         calculate();
       });
+
+      form.addEventListener("change", (event) => {
+        if (event.target.name === "safety_margin_option") {
+          updateCustomSafetyMarginVisibility();
+        }
+        if (
+          event.target.name === "electricity_profile" ||
+          event.target.name === "safety_margin_option"
+        ) {
+          calculate();
+        }
+      });
+
+      customSafetyMarginInput.addEventListener("input", calculate);
 
       Promise.all([loadCities(), loadElectricityProfiles()]).then(calculate);
     </script>

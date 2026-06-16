@@ -38,11 +38,16 @@ observations yet.
 ```bash
 curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR"
 curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR&electricity_profile=high"
+curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR&electricity_profile=high&safety_margin_percent=10"
 curl "http://127.0.0.1:8000/api/cities"
 curl "http://127.0.0.1:8000/api/electricity/profiles"
 curl "http://127.0.0.1:8000/api/sources/status"
 curl "http://127.0.0.1:8000/api/sources/rules"
 ```
+
+The UI exposes electricity profiles as a toggle and lets the user choose a
+5%, 10%, 15%, or custom safety margin. The API accepts the same controls through
+`electricity_profile` and `safety_margin_percent`.
 
 ## Current Data Model
 

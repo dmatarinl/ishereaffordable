@@ -30,6 +30,7 @@ class AffordabilityService:
         self,
         city: SupportedCity,
         electricity_profile: ElectricityProfile,
+        safety_margin_percent: float | None = None,
     ) -> AffordabilityEstimate | None:
         observations = self.repository.latest_city_observations(city.key)
         if not observations:
@@ -39,6 +40,7 @@ class AffordabilityService:
             city,
             observations,
             electricity_profile,
+            safety_margin_percent,
         )
 
     def _estimate_from_observations(
@@ -46,12 +48,17 @@ class AffordabilityService:
         city: SupportedCity,
         observations,
         electricity_profile: ElectricityProfile,
+        safety_margin_percent: float | None = None,
     ) -> AffordabilityEstimate:
         adjusted_observations = apply_request_profiles(
             observations,
             electricity_profile,
         )
-        return self.calculator.estimate(
+        calculator = self.calculator
+        if safety_margin_percent is not None:
+            calculator = AffordabilityCalculator(safety_margin_percent)
+
+        return calculator.estimate(
             CityCostInputs(
                 city=city.name,
                 city_key=city.key,
