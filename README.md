@@ -187,6 +187,20 @@ The gas bill estimate applies maintained assumptions for hydrocarbons tax, VAT,
 and meter rental. These are shown in the line-item details so BOE source data
 and bill assumptions are not confused.
 
+## Water Profiles
+
+Water remains a low-confidence city seed while official municipal tariff
+adapters are pending. The UI exposes three transparent usage scenarios:
+
+- `low`: 4 m3/month, rounded from the INE national per-person household average
+- `standard`: 6 m3/month, the current seed reference and a first-band boundary
+- `high`: 9 m3/month, a higher-use second-band boundary
+
+The 6 m3 city seed is scaled linearly for the selected scenario. This does not
+yet reproduce fixed fees, progressive bands, sanitation charges or taxes. The
+profile information control links to the INE consumption statistics and Aigues
+de Barcelona's published domestic bands that support these boundaries.
+
 ## Deployment
 
 The repo includes `render.yaml` and `Procfile`.

@@ -82,6 +82,7 @@ class AffordabilityCalculator:
             profile=costs.household_profile,
             electricity_profile=_electricity_profile_from_costs(costs),
             gas_profile=_gas_profile_from_costs(costs),
+            water_profile=_water_profile_from_costs(costs),
             safety_margin_percent=self.safety_margin_percent,
             monthly_baseline=round(monthly_baseline, 2),
             monthly_safety_margin=round(monthly_safety_margin, 2),
@@ -129,6 +130,25 @@ def _gas_profile_from_costs(costs: CityCostInputs) -> str:
         return "standard"
 
     profile = gas.details.get("gas_profile")
+    if isinstance(profile, str) and profile:
+        return profile
+
+    return "standard"
+
+
+def _water_profile_from_costs(costs: CityCostInputs) -> str:
+    water = next(
+        (
+            item
+            for item in costs.line_items
+            if item.category == CostCategory.WATER
+        ),
+        None,
+    )
+    if water is None:
+        return "standard"
+
+    profile = water.details.get("water_profile")
     if isinstance(profile, str) and profile:
         return profile
 

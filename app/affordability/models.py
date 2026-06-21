@@ -59,7 +59,7 @@ class CityCostInputs(BaseModel):
             "Long-term one-bedroom rental",
             "No private car ownership",
             "Gas usage depends on the selected household gas profile",
-            "6 m3/month water usage",
+            "Water usage depends on the selected household water profile",
             "Trash tax converted from annual to monthly cost",
         ]
     )
@@ -82,6 +82,7 @@ class AffordabilityEstimate(BaseModel):
     profile: str
     electricity_profile: str
     gas_profile: str
+    water_profile: str
     safety_margin_percent: float
     monthly_baseline: float
     monthly_safety_margin: float

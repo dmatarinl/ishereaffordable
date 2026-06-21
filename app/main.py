@@ -17,6 +17,13 @@ from app.services.affordability import AffordabilityService
 from app.services.refresh import ensure_seed_data
 from app.sources.catalog import source_rules
 from app.storage.database import CostObservationRepository
+from app.water.profiles import (
+    DEFAULT_WATER_PROFILE,
+    WATER_PROFILE_METHODOLOGY,
+    WaterProfile,
+    water_profile_catalog,
+    water_profile_sources,
+)
 
 repository = CostObservationRepository(settings.database_url)
 calculator = AffordabilityCalculator(
@@ -25,6 +32,7 @@ calculator = AffordabilityCalculator(
 affordability_service = AffordabilityService(repository, calculator)
 DEFAULT_ELECTRICITY_PROFILE_QUERY = Query(DEFAULT_ELECTRICITY_PROFILE)
 DEFAULT_GAS_PROFILE_QUERY = Query(DEFAULT_GAS_PROFILE)
+DEFAULT_WATER_PROFILE_QUERY = Query(DEFAULT_WATER_PROFILE)
 SAFETY_MARGIN_PERCENT_QUERY = Query(
     settings.safety_margin_percent,
     ge=0,
@@ -84,12 +92,23 @@ def gas_profiles():
     }
 
 
+@app.get("/api/water/profiles")
+def water_profiles():
+    return {
+        "default": DEFAULT_WATER_PROFILE.value,
+        "profiles": water_profile_catalog(),
+        "methodology": WATER_PROFILE_METHODOLOGY,
+        "sources": water_profile_sources(),
+    }
+
+
 @app.get("/api/affordability")
 def affordability(
     city: str = Query(..., min_length=2, examples=["Madrid"]),
     currency: str = Query(settings.default_currency, min_length=3, max_length=3),
     electricity_profile: ElectricityProfile = DEFAULT_ELECTRICITY_PROFILE_QUERY,
     gas_profile: GasProfile = DEFAULT_GAS_PROFILE_QUERY,
+    water_profile: WaterProfile = DEFAULT_WATER_PROFILE_QUERY,
     safety_margin_percent: float = SAFETY_MARGIN_PERCENT_QUERY,
 ):
     if currency.upper() != settings.default_currency:
@@ -109,6 +128,7 @@ def affordability(
         supported_city,
         electricity_profile,
         gas_profile,
+        water_profile,
         safety_margin_percent,
     )
     if estimate is None:

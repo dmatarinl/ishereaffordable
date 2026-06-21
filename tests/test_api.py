@@ -13,6 +13,7 @@ def test_affordability_endpoint_returns_source_breakdown() -> None:
     assert payload["city"] == "Madrid"
     assert payload["electricity_profile"] == "standard"
     assert payload["gas_profile"] == "standard"
+    assert payload["water_profile"] == "standard"
     assert payload["monthly_required"] > payload["monthly_baseline"]
     assert len(payload["line_items"]) == 8
     assert {item["category"] for item in payload["line_items"]} >= {
@@ -59,6 +60,20 @@ def test_gas_profiles_endpoint_lists_supported_profiles() -> None:
         "standard",
         "heating",
     }
+
+
+def test_water_profiles_endpoint_lists_rationale_and_sources() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/water/profiles")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["default"] == "standard"
+    assert [profile["monthly_m3"] for profile in payload["profiles"]] == [4, 6, 9]
+    assert all(profile["rationale"] for profile in payload["profiles"])
+    assert len(payload["sources"]) == 2
+    assert "no single household water tariff" in payload["methodology"]
 
 
 def test_affordability_endpoint_applies_electricity_profile() -> None:
@@ -121,6 +136,39 @@ def test_affordability_endpoint_applies_gas_profile() -> None:
     assert heating_payload["gas_profile"] == "heating"
     assert low_gas["monthly_amount"] < heating_gas["monthly_amount"]
     assert low_payload["monthly_required"] < heating_payload["monthly_required"]
+
+
+def test_affordability_endpoint_applies_water_profile() -> None:
+    with TestClient(app) as client:
+        low_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&water_profile=low"
+        )
+        high_response = client.get(
+            "/api/affordability?city=Madrid&currency=EUR&water_profile=high"
+        )
+
+    assert low_response.status_code == 200
+    assert high_response.status_code == 200
+
+    low_payload = low_response.json()
+    high_payload = high_response.json()
+    low_water = next(
+        item
+        for item in low_payload["line_items"]
+        if item["category"] == "water"
+    )
+    high_water = next(
+        item
+        for item in high_payload["line_items"]
+        if item["category"] == "water"
+    )
+
+    assert low_payload["water_profile"] == "low"
+    assert high_payload["water_profile"] == "high"
+    assert low_water["details"]["monthly_m3"] == 4
+    assert high_water["details"]["monthly_m3"] == 9
+    assert low_water["monthly_amount"] < high_water["monthly_amount"]
+    assert low_water["data_mode"] == high_water["data_mode"] == "manual_seed"
 
 
 def test_affordability_endpoint_applies_safety_margin_percent() -> None:

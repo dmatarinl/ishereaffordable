@@ -17,6 +17,7 @@ from app.providers.seed import (
     SeedUtilityProvider,
 )
 from app.storage.database import CostObservationRepository
+from app.water.profiles import WaterProfile, apply_water_profile
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,7 @@ def apply_request_profiles(
     observations: list[CostLineItem],
     electricity_profile: ElectricityProfile,
     gas_profile: GasProfile,
+    water_profile: WaterProfile,
     gas_bill_assumptions: GasBillAssumptions,
 ) -> list[CostLineItem]:
     return [
@@ -100,6 +102,8 @@ def apply_request_profiles(
         if item.category.value == "electricity"
         else apply_gas_profile(item, gas_profile, gas_bill_assumptions)
         if item.category.value == "gas"
+        else apply_water_profile(item, water_profile)
+        if item.category.value == "water"
         else item
         for item in observations
     ]

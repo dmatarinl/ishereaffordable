@@ -11,6 +11,11 @@ from app.gas.profiles import (
 )
 from app.services.refresh import apply_request_profiles
 from app.storage.database import CostObservationRepository
+from app.water.profiles import (
+    DEFAULT_WATER_PROFILE,
+    WaterProfile,
+    water_profile_assumptions,
+)
 
 
 class AffordabilityService:
@@ -32,6 +37,7 @@ class AffordabilityService:
             observations,
             ElectricityProfile.STANDARD,
             DEFAULT_GAS_PROFILE,
+            DEFAULT_WATER_PROFILE,
         )
 
     def estimate_with_profiles(
@@ -39,6 +45,7 @@ class AffordabilityService:
         city: SupportedCity,
         electricity_profile: ElectricityProfile,
         gas_profile: GasProfile,
+        water_profile: WaterProfile,
         safety_margin_percent: float | None = None,
     ) -> AffordabilityEstimate | None:
         observations = self.repository.latest_city_observations(city.key)
@@ -50,6 +57,7 @@ class AffordabilityService:
             observations,
             electricity_profile,
             gas_profile,
+            water_profile,
             safety_margin_percent,
         )
 
@@ -59,12 +67,14 @@ class AffordabilityService:
         observations,
         electricity_profile: ElectricityProfile,
         gas_profile: GasProfile,
+        water_profile: WaterProfile,
         safety_margin_percent: float | None = None,
     ) -> AffordabilityEstimate:
         adjusted_observations = apply_request_profiles(
             observations,
             electricity_profile,
             gas_profile,
+            water_profile,
             GasBillAssumptions(
                 hydrocarbons_tax_eur_per_kwh=(
                     settings.gas_hydrocarbons_tax_eur_per_kwh
@@ -87,7 +97,7 @@ class AffordabilityService:
                 household_profile=(
                     "Single adult, one-bedroom rental, no car, Spain MVP "
                     f"({electricity_profile.value} electricity, "
-                    f"{gas_profile.value} gas)"
+                    f"{gas_profile.value} gas, {water_profile.value} water)"
                 ),
                 assumptions=[
                     "One adult household",
@@ -95,7 +105,7 @@ class AffordabilityService:
                     "No private car ownership",
                     *electricity_profile_assumptions(electricity_profile),
                     *gas_profile_assumptions(gas_profile),
-                    "6 m3/month water usage",
+                    *water_profile_assumptions(water_profile),
                     "Trash tax converted from annual to monthly cost",
                 ],
             )

@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from app.affordability.models import Confidence, CostCategory, CostLineItem, DataMode
 from app.cities import SupportedCity
 from app.food.basket import canonical_food_basket
+from app.water.profiles import DEFAULT_WATER_PROFILE, apply_water_profile
 
 IDEALISTA_ACCESS_URL = "https://developers.idealista.com/access-request"
 INE_API_URL = "https://www.ine.es/dyngs/DAB/index.htm?cid=1099"
@@ -153,24 +154,27 @@ class SeedUtilityProvider:
 
     def fetch_city(self, city: SupportedCity) -> list[CostLineItem]:
         water = WATER_SEEDS[city.key]
-        return [
-            CostLineItem(
-                category=CostCategory.WATER,
-                label="Water",
-                monthly_amount=water,
-                currency=city.currency,
-                data_mode=DataMode.MANUAL_SEED,
-                source_name=self.source_name,
-                source_url=GITHUB_URL,
-                observed_at=_observed_at(),
-                confidence=Confidence.LOW,
-                methodology=(
-                    "6 m3/month default usage with city-level seed tariffs. Replace "
-                    "with municipal or local water provider tariffs."
-                ),
-                details={"monthly_m3": 6},
+        item = CostLineItem(
+            category=CostCategory.WATER,
+            label="Water",
+            monthly_amount=water,
+            currency=city.currency,
+            data_mode=DataMode.MANUAL_SEED,
+            source_name=self.source_name,
+            source_url=GITHUB_URL,
+            observed_at=_observed_at(),
+            confidence=Confidence.LOW,
+            methodology=(
+                "6 m3/month reference with city-level seed tariffs. Replace with "
+                "municipal or local water provider tariff calculations."
             ),
-        ]
+            details={
+                "monthly_m3": 6,
+                "reference_monthly_m3": 6,
+                "reference_monthly_amount_eur": water,
+            },
+        )
+        return [apply_water_profile(item, DEFAULT_WATER_PROFILE)]
 
 
 class SeedMunicipalTaxProvider:

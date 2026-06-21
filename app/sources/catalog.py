@@ -87,7 +87,10 @@ SOURCE_RULES = {
         ],
         freshness_days=180,
         stale_confidence=Confidence.LOW,
-        user_guidance="Water tariffs change slowly but vary by municipality.",
+        user_guidance=(
+            "Water profiles are low-confidence usage scenarios until official "
+            "municipal tariff adapters model local bill components."
+        ),
     ),
     CostCategory.TRASH_TAX: SourceRule(
         category=CostCategory.TRASH_TAX,
