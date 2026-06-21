@@ -11,6 +11,7 @@ from app.gas.profiles import (
 )
 from app.services.refresh import apply_request_profiles
 from app.storage.database import CostObservationRepository
+from app.trash_tax.rules import municipal_waste_assumptions
 from app.water.profiles import (
     DEFAULT_WATER_PROFILE,
     WaterProfile,
@@ -86,6 +87,11 @@ class AffordabilityService:
         calculator = self.calculator
         if safety_margin_percent is not None:
             calculator = AffordabilityCalculator(safety_margin_percent)
+        municipal_waste = next(
+            item
+            for item in adjusted_observations
+            if item.category.value == "trash_tax"
+        )
 
         return calculator.estimate(
             CityCostInputs(
@@ -106,7 +112,7 @@ class AffordabilityService:
                     *electricity_profile_assumptions(electricity_profile),
                     *gas_profile_assumptions(gas_profile),
                     *water_profile_assumptions(water_profile),
-                    "Trash tax converted from annual to monthly cost",
+                    *municipal_waste_assumptions(municipal_waste),
                 ],
             )
         )

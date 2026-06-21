@@ -95,18 +95,23 @@ SOURCE_RULES = {
     CostCategory.TRASH_TAX: SourceRule(
         category=CostCategory.TRASH_TAX,
         label="Trash tax",
-        first_choice="Municipal ordinance/open data",
+        first_choice="Municipal ordinance, official publication, or open data",
         second_choice="Permitted city tax-page scrape",
         fallback="Manual trash-tax seed",
         allowed_data_modes=[
             DataMode.OFFICIAL_API,
+            DataMode.OFFICIAL_PUBLICATION,
             DataMode.PERMITTED_SCRAPE,
             DataMode.MANUAL_SEED,
             DataMode.UNAVAILABLE,
         ],
         freshness_days=365,
         stale_confidence=Confidence.LOW,
-        user_guidance="Trash tax should be checked annually against municipal rules.",
+        user_guidance=(
+            "Trash tax should use official annual municipal rules. Representative "
+            "averages, ranges, and water-band estimates must remain distinguishable "
+            "from exact household bills."
+        ),
     ),
     CostCategory.FOOD: SourceRule(
         category=CostCategory.FOOD,

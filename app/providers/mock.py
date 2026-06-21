@@ -2,10 +2,10 @@ from app.core.config import settings
 from app.gas.profiles import GasBillAssumptions
 from app.providers.boe_gas import BoeGasTurProvider
 from app.providers.esios import EsiosElectricityProvider
+from app.providers.municipal_waste import HybridMunicipalWasteProvider
 from app.providers.seed import (
     SeedFoodBasketProvider,
     SeedHousingProvider,
-    SeedMunicipalTaxProvider,
     SeedTransportProvider,
     SeedUtilityProvider,
 )
@@ -39,6 +39,6 @@ class MockCostOfLivingProvider:
                 enable_discovery=settings.boe_gas_enable_discovery,
             ),
             SeedUtilityProvider(),
-            SeedMunicipalTaxProvider(),
+            HybridMunicipalWasteProvider(),
             SeedTransportProvider(),
         ]

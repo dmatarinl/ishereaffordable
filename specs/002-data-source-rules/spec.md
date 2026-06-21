@@ -27,7 +27,7 @@ as official.
 | Electricity | eSIOS API | None | Manual seed | 1 day |
 | Gas | BOE OpenData gas TUR resolution discovery | None | Manual seed | 90 days |
 | Water | Municipal/provider tariff data | Permitted provider/city scrape | Manual seed | 180 days |
-| Trash tax | Municipal ordinance/open data | Permitted city tax-page scrape | Manual seed | 365 days |
+| Trash tax | Municipal ordinance/official publication/open data | Permitted city tax-page scrape | Manual seed | 365 days |
 | Food | Supermarket API/feed | Permitted supermarket scrape | Manual basket seed | 7 days |
 | Public transport | Official transport authority fares | Permitted fare-page scrape | Manual seed | 90 days |
 | Safety margin | Calculated formula | None | None | Always current |
@@ -36,8 +36,9 @@ as official.
 
 - `high`: official API/open data, parsed successfully, inside freshness window,
   and methodology complete.
-- `medium`: permitted scrape from a stable public page, or official data with
-  minor assumptions/manual mapping, inside freshness window.
+- `medium`: permitted scrape from a stable public page, or official publication
+  with assumptions, representative averages, ranges, or manual mapping, inside
+  the freshness window.
 - `low`: manual seed, stale data, partial basket/listing data, unavailable data,
   or any provider failure using fallback.
 
@@ -61,6 +62,8 @@ as official.
   loads.
 - The system MUST avoid redundant refresh calls to the same source when one
   shared response can be reused safely across multiple cities.
+- A refresh that falls back to a weaker data mode MUST retain a stronger cached
+  observation when one exists and mark the source run as degraded.
 
 ## Source-Specific Notes
 
@@ -77,6 +80,9 @@ as official.
   latest resolution, parse the official BOE document, and show tax assumptions
   separately from the source tariff because BOE publishes TUR prices before
   taxes.
+- Municipal waste charges should use reusable tariff rules for published city
+  averages, water-consumption bands, and official ranges. Exact household bills
+  must not be implied when required property or billing inputs are unavailable.
 
 ## Non-Goals
 

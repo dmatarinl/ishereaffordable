@@ -24,6 +24,7 @@ class Confidence(StrEnum):
 
 class DataMode(StrEnum):
     OFFICIAL_API = "official_api"
+    OFFICIAL_PUBLICATION = "official_publication"
     PERMITTED_SCRAPE = "permitted_scrape"
     MANUAL_SEED = "manual_seed"
     CALCULATED = "calculated"

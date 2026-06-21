@@ -235,6 +235,8 @@
 
       .segmented input[type="radio"] {
         position: absolute;
+        width: 1px;
+        height: 1px;
         opacity: 0;
         pointer-events: none;
       }
@@ -360,7 +362,8 @@
         color: var(--warn);
       }
 
-      .badge.official_api {
+      .badge.official_api,
+      .badge.official_publication {
         background: #e8f4ea;
         color: #236b38;
       }
@@ -375,6 +378,11 @@
         color: var(--muted);
         font-size: 13px;
         line-height: 1.4;
+      }
+
+      .source-meta {
+        color: var(--ink);
+        font-weight: 750;
       }
 
       .warnings {
@@ -574,6 +582,7 @@
 
       const dataModeLabels = {
         official_api: "Official API",
+        official_publication: "Official publication",
         permitted_scrape: "Permitted scrape",
         manual_seed: "Cached fallback",
         calculated: "Calculated",
@@ -721,7 +730,7 @@
                 <span class="${confidenceClass}" title="${confidenceDescription}">${confidenceLabel}</span>
               </div>
               <div class="source">
-                ${item.source_name} · ${sourceTimeline}
+                <span class="source-meta">${item.source_name} · ${sourceTimeline}</span>
                 <br />${item.methodology}
               </div>
             </div>
@@ -744,6 +753,9 @@
         }
         if (item.data_mode === "official_api") {
           return `official source observed ${observedAt} · cached ${cachedAt}${validUntil}`;
+        }
+        if (item.data_mode === "official_publication") {
+          return `official tariff published ${observedAt} · cached ${cachedAt}${validUntil}`;
         }
         if (item.data_mode === "permitted_scrape") {
           return `permitted scrape observed ${observedAt} · cached ${cachedAt}${validUntil}`;

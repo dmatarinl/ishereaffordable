@@ -17,6 +17,11 @@ from app.services.affordability import AffordabilityService
 from app.services.refresh import ensure_seed_data
 from app.sources.catalog import source_rules
 from app.storage.database import CostObservationRepository
+from app.trash_tax.rules import (
+    MODEL_VERSION,
+    MUNICIPAL_WASTE_TARIFFS,
+    municipal_waste_tariff_catalog,
+)
 from app.water.profiles import (
     DEFAULT_WATER_PROFILE,
     WATER_PROFILE_METHODOLOGY,
@@ -99,6 +104,19 @@ def water_profiles():
         "profiles": water_profile_catalog(),
         "methodology": WATER_PROFILE_METHODOLOGY,
         "sources": water_profile_sources(),
+    }
+
+
+@app.get("/api/trash-tax/rules")
+def trash_tax_rules():
+    fallback_cities = [
+        city.key for city in SUPPORTED_CITIES if city.key not in MUNICIPAL_WASTE_TARIFFS
+    ]
+    return {
+        "model": "hybrid",
+        "version": MODEL_VERSION,
+        "rules": municipal_waste_tariff_catalog(),
+        "fallback_cities": fallback_cities,
     }
 
 

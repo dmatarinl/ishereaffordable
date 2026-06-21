@@ -76,6 +76,23 @@ def test_water_profiles_endpoint_lists_rationale_and_sources() -> None:
     assert "no single household water tariff" in payload["methodology"]
 
 
+def test_trash_tax_rules_endpoint_exposes_hybrid_coverage() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/trash-tax/rules")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["model"] == "hybrid"
+    assert payload["version"] == "2026.1"
+    assert {rule["city_key"] for rule in payload["rules"]} == {
+        "madrid",
+        "zaragoza",
+        "alicante",
+    }
+    assert "barcelona" in payload["fallback_cities"]
+
+
 def test_affordability_endpoint_applies_electricity_profile() -> None:
     with TestClient(app) as client:
         light_response = client.get(
@@ -169,6 +186,34 @@ def test_affordability_endpoint_applies_water_profile() -> None:
     assert high_water["details"]["monthly_m3"] == 9
     assert low_water["monthly_amount"] < high_water["monthly_amount"]
     assert low_water["data_mode"] == high_water["data_mode"] == "manual_seed"
+
+
+def test_zaragoza_trash_tax_uses_selected_water_profile() -> None:
+    with TestClient(app) as client:
+        standard_response = client.get(
+            "/api/affordability?city=Zaragoza&water_profile=standard"
+        )
+        high_response = client.get(
+            "/api/affordability?city=Zaragoza&water_profile=high"
+        )
+
+    assert standard_response.status_code == 200
+    assert high_response.status_code == 200
+    standard_tax = next(
+        item
+        for item in standard_response.json()["line_items"]
+        if item["category"] == "trash_tax"
+    )
+    high_tax = next(
+        item
+        for item in high_response.json()["line_items"]
+        if item["category"] == "trash_tax"
+    )
+
+    assert standard_tax["data_mode"] == "official_publication"
+    assert standard_tax["monthly_amount"] == 6.06
+    assert high_tax["monthly_amount"] == 6.67
+    assert high_tax["details"]["annual_amount"] == 80.0
 
 
 def test_affordability_endpoint_applies_safety_margin_percent() -> None:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from app.affordability.models import CostLineItem
+from app.affordability.models import CostLineItem, DataMode
 from app.cities import SUPPORTED_CITIES, SupportedCity, get_supported_city
 from app.core.config import settings
 from app.electricity.profiles import ElectricityProfile, apply_electricity_profile
@@ -9,14 +9,15 @@ from app.gas.profiles import GasBillAssumptions, GasProfile, apply_gas_profile
 from app.providers.base import CostProvider
 from app.providers.boe_gas import BoeGasTurProvider
 from app.providers.esios import EsiosElectricityProvider
+from app.providers.municipal_waste import HybridMunicipalWasteProvider
 from app.providers.seed import (
     SeedFoodBasketProvider,
     SeedHousingProvider,
-    SeedMunicipalTaxProvider,
     SeedTransportProvider,
     SeedUtilityProvider,
 )
 from app.storage.database import CostObservationRepository
+from app.trash_tax.rules import MODEL_VERSION, apply_municipal_waste_profile
 from app.water.profiles import WaterProfile, apply_water_profile
 
 
@@ -52,7 +53,7 @@ def default_providers() -> list[CostProvider]:
             enable_discovery=settings.boe_gas_enable_discovery,
         ),
         SeedUtilityProvider(),
-        SeedMunicipalTaxProvider(),
+        HybridMunicipalWasteProvider(),
         SeedTransportProvider(),
     ]
 
@@ -104,6 +105,8 @@ def apply_request_profiles(
         if item.category.value == "gas"
         else apply_water_profile(item, water_profile)
         if item.category.value == "water"
+        else apply_municipal_waste_profile(item, water_profile)
+        if item.category.value == "trash_tax"
         else item
         for item in observations
     ]
@@ -116,6 +119,10 @@ def _refresh_supported_city(
 ) -> RefreshResult:
     observations: list[CostLineItem] = []
     warnings: list[str] = []
+    previous_by_category = {
+        item.category: item
+        for item in repository.latest_city_observations(city.key)
+    }
 
     for provider in providers:
         started_at = datetime.now(UTC)
@@ -135,7 +142,28 @@ def _refresh_supported_city(
             )
             continue
 
+        provider_items, preserved_categories = _preserve_stronger_cached_items(
+            provider_items,
+            previous_by_category,
+        )
         observations.extend(provider_items)
+        if preserved_categories:
+            preserved = ", ".join(preserved_categories)
+            message = (
+                f"{city.name}: provider degraded; retained stronger cached "
+                f"observations for {preserved}"
+            )
+            warnings.append(message)
+            repository.record_source_run(
+                source_id=provider.source_id,
+                source_name=provider.source_name,
+                status="degraded",
+                started_at=started_at,
+                finished_at=datetime.now(UTC),
+                message=message,
+            )
+            continue
+
         repository.record_source_run(
             source_id=provider.source_id,
             source_name=provider.source_name,
@@ -158,6 +186,30 @@ def _refresh_supported_city(
     )
 
 
+def _preserve_stronger_cached_items(
+    incoming: list[CostLineItem],
+    previous_by_category: dict,
+) -> tuple[list[CostLineItem], list[str]]:
+    mode_rank = {
+        DataMode.UNAVAILABLE: 0,
+        DataMode.MANUAL_SEED: 1,
+        DataMode.PERMITTED_SCRAPE: 2,
+        DataMode.OFFICIAL_PUBLICATION: 3,
+        DataMode.OFFICIAL_API: 4,
+        DataMode.CALCULATED: 4,
+    }
+    resolved: list[CostLineItem] = []
+    preserved: list[str] = []
+    for item in incoming:
+        previous = previous_by_category.get(item.category)
+        if previous and mode_rank[previous.data_mode] > mode_rank[item.data_mode]:
+            resolved.append(previous)
+            preserved.append(item.category.value)
+        else:
+            resolved.append(item)
+    return resolved, preserved
+
+
 def _needs_profile_ready_observations(repository: CostObservationRepository) -> bool:
     observations = repository.latest_city_observations(SUPPORTED_CITIES[0].key)
     gas = next(
@@ -168,7 +220,18 @@ def _needs_profile_ready_observations(repository: CostObservationRepository) -> 
         ),
         None,
     )
-    if gas is None:
+    tax = next(
+        (
+            item
+            for item in observations
+            if item.category.value == "trash_tax"
+        ),
+        None,
+    )
+    if gas is None or tax is None:
         return True
 
-    return "gas_terms" not in gas.details
+    return (
+        "gas_terms" not in gas.details
+        or tax.details.get("tariff_model_version") != MODEL_VERSION
+    )
