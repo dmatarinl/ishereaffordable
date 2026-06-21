@@ -30,8 +30,11 @@ Acceptance criteria:
 
 - WHEN a line item is based on manual seed data, THE SYSTEM SHALL show a visible
   fallback label and low confidence.
-- WHEN a line item is based on an official API, THE SYSTEM SHALL show the
-  official source name, source URL, and high confidence when parsing succeeds.
+- WHEN a line item uses an official source but the displayed amount also relies
+  on maintained assumptions or calculations, THE SYSTEM SHALL show official
+  provenance and medium estimate confidence.
+- WHEN a displayed amount is supported by current authoritative data with
+  minimal assumptions, THE SYSTEM SHALL show high estimate confidence.
 - WHEN a line item is calculated by the app, THE SYSTEM SHALL label it as
   calculated and show the formula input.
 
@@ -70,6 +73,11 @@ Acceptance criteria:
 - The UI MUST replace ambiguous wording like "observed" with source-aware copy:
   "official source observed", "cached fallback", "calculated by formula", or
   equivalent.
+- The UI MUST label confidence levels as high, medium, or low confidence and
+  explain that they rate the final estimate, not the price or consumption.
+- The UI MUST distinguish source provenance from estimate confidence. Official
+  provenance does not automatically imply high confidence when the final amount
+  depends on material assumptions or calculations.
 - Refresh jobs MUST store normalized observations with both source metadata and
   cache metadata.
 - Providers MUST NOT make live network calls during ordinary page loads.

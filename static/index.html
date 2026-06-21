@@ -303,6 +303,13 @@
         gap: 8px;
       }
 
+      .breakdown-heading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 20px 0 4px;
+      }
+
       .row {
         display: grid;
         grid-template-columns: 1fr auto;
@@ -336,6 +343,11 @@
       .badge.low {
         background: #fff0e7;
         color: var(--warn);
+      }
+
+      .badge.high {
+        background: #e8f4ea;
+        color: #236b38;
       }
 
       .badge.mode {
@@ -398,6 +410,10 @@
         .profile-tooltip {
           left: -110px;
           width: min(338px, calc(100vw - 52px));
+        }
+
+        .confidence-help .profile-tooltip {
+          left: -140px;
         }
       }
     </style>
@@ -528,9 +544,6 @@
       const waterProfileHelp = document.querySelector(
         "#water-profile-help-content",
       );
-      const waterProfileHelpSummary = document.querySelector(
-        ".profile-help summary",
-      );
       const waterProfileHelpControl = document.querySelector(".profile-help");
       const customSafetyMarginInput = document.querySelector("#custom-safety-margin");
       const result = document.querySelector("#result");
@@ -565,6 +578,18 @@
         manual_seed: "Cached fallback",
         calculated: "Calculated",
         unavailable: "Unavailable",
+      };
+
+      const confidenceLabels = {
+        high: "High confidence",
+        medium: "Medium confidence",
+        low: "Low confidence",
+      };
+
+      const confidenceDescriptions = {
+        high: "Current authoritative data with minimal assumptions.",
+        medium: "Legitimate source data combined with maintained assumptions or calculations.",
+        low: "Fallback, stale, incomplete, or strongly assumption-dependent data.",
       };
 
       async function loadCities() {
@@ -681,7 +706,9 @@
 
       function renderLineItem(item, currency) {
         const label = categoryLabels[item.category] ?? item.label;
-        const confidenceClass = item.confidence === "low" ? "badge low" : "badge";
+        const confidenceLabel = confidenceLabels[item.confidence] ?? item.confidence;
+        const confidenceDescription = confidenceDescriptions[item.confidence] ?? "";
+        const confidenceClass = `badge confidence ${item.confidence}`;
         const dataModeLabel = dataModeLabels[item.data_mode] ?? item.data_mode;
         const dataModeClass = `badge mode ${item.data_mode}`;
         const sourceTimeline = renderSourceTimeline(item);
@@ -691,7 +718,7 @@
               <div class="row-title">
                 <span>${label}</span>
                 <span class="${dataModeClass}">${dataModeLabel}</span>
-                <span class="${confidenceClass}">${item.confidence}</span>
+                <span class="${confidenceClass}" title="${confidenceDescription}">${confidenceLabel}</span>
               </div>
               <div class="source">
                 ${item.source_name} · ${sourceTimeline}
@@ -758,11 +785,35 @@
             <div class="metric"><span>Safety margin</span><strong>${formatMoney(estimate.monthly_safety_margin, estimate.currency)}</strong></div>
             <div class="metric"><span>Annual target</span><strong>${formatMoney(estimate.annual_required, estimate.currency)}</strong></div>
           </div>
+          <div class="breakdown-heading">
+            <strong>Cost breakdown</strong>
+            <details class="profile-help confidence-help">
+              <summary
+                aria-label="What do confidence badges mean?"
+                title="What do confidence badges mean?"
+              >i</summary>
+              <div class="profile-tooltip">
+                <strong>Confidence measures estimate reliability</strong>
+                <p>
+                  It does not describe price or consumption. The source badge
+                  shows where the data came from; confidence rates the final
+                  amount displayed after any assumptions and calculations.
+                </p>
+                <ul>
+                  <li><strong>High confidence:</strong> current authoritative data with minimal assumptions.</li>
+                  <li><strong>Medium confidence:</strong> legitimate source data combined with maintained assumptions or calculations.</li>
+                  <li><strong>Low confidence:</strong> fallback, stale, incomplete, or strongly assumption-dependent data.</li>
+                </ul>
+              </div>
+            </details>
+          </div>
           <div class="breakdown">
             ${estimate.line_items.map((item) => renderLineItem(item, estimate.currency)).join("")}
           </div>
           ${renderWarnings(estimate.warnings)}
         `;
+
+        result.querySelectorAll(".profile-help").forEach(setupHoverHelp);
       }
 
       form.addEventListener("submit", (event) => {
@@ -791,43 +842,44 @@
         window.matchMedia(
           "(min-width: 861px) and (hover: hover) and (pointer: fine)",
         ).matches;
-      let waterProfileHelpCloseTimer;
 
-      waterProfileHelpControl.addEventListener("mouseenter", () => {
-        if (usesDesktopHover()) {
-          window.clearTimeout(waterProfileHelpCloseTimer);
-          waterProfileHelpControl.open = true;
-        }
-      });
+      function setupHoverHelp(control) {
+        if (!control || control.dataset.helpReady === "true") return;
+        control.dataset.helpReady = "true";
+        const summary = control.querySelector("summary");
+        let closeTimer;
 
-      waterProfileHelpControl.addEventListener("mouseleave", () => {
-        if (usesDesktopHover()) {
-          waterProfileHelpCloseTimer = window.setTimeout(() => {
-            waterProfileHelpControl.open = false;
-          }, 350);
-        }
-      });
+        control.addEventListener("mouseenter", () => {
+          if (usesDesktopHover()) {
+            window.clearTimeout(closeTimer);
+            control.open = true;
+          }
+        });
 
-      waterProfileHelpControl.addEventListener("focusin", () => {
-        if (usesDesktopHover()) {
-          waterProfileHelpControl.open = true;
-        }
-      });
+        control.addEventListener("mouseleave", () => {
+          if (usesDesktopHover()) {
+            closeTimer = window.setTimeout(() => {
+              control.open = false;
+            }, 350);
+          }
+        });
 
-      waterProfileHelpControl.addEventListener("focusout", (event) => {
-        if (
-          usesDesktopHover() &&
-          !waterProfileHelpControl.contains(event.relatedTarget)
-        ) {
-          waterProfileHelpControl.open = false;
-        }
-      });
+        control.addEventListener("focusin", () => {
+          if (usesDesktopHover()) control.open = true;
+        });
 
-      waterProfileHelpSummary.addEventListener("click", (event) => {
-        if (usesDesktopHover()) {
-          event.preventDefault();
-        }
-      });
+        control.addEventListener("focusout", (event) => {
+          if (usesDesktopHover() && !control.contains(event.relatedTarget)) {
+            control.open = false;
+          }
+        });
+
+        summary.addEventListener("click", (event) => {
+          if (usesDesktopHover()) event.preventDefault();
+        });
+      }
+
+      setupHoverHelp(waterProfileHelpControl);
 
       Promise.all([
         loadCities(),
