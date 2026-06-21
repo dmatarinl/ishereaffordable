@@ -229,7 +229,7 @@ def apply_municipal_waste_profile(
 
 def municipal_waste_assumptions(item: CostLineItem) -> list[str]:
     if not item.details.get("tariff_rule"):
-        return ["Trash tax remains a low-confidence manual city fallback"]
+        return ["Trash tax remains a manually maintained city estimate"]
 
     assumptions = [
         "Trash tax is converted from an annual official tariff to a monthly cost",

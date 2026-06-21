@@ -29,7 +29,7 @@ trust the result.
 Acceptance criteria:
 
 - WHEN a line item is based on manual seed data, THE SYSTEM SHALL show a visible
-  fallback label and low confidence.
+  city-estimate label while retaining low confidence in API metadata.
 - WHEN a line item uses an official source but the displayed amount also relies
   on maintained assumptions or calculations, THE SYSTEM SHALL show official
   provenance and medium estimate confidence.
@@ -71,10 +71,14 @@ Acceptance criteria:
 - The API response MUST include top-level warnings for every low-confidence,
   stale, unavailable, or fallback category.
 - The UI MUST replace ambiguous wording like "observed" with source-aware copy:
-  "official source observed", "cached fallback", "calculated by formula", or
+  "official source observed", "city estimate cached", "calculated by formula", or
   equivalent.
-- The UI MUST label confidence levels as high, medium, or low confidence and
-  explain that they rate the final estimate, not the price or consumption.
+- The public UI MUST NOT present confidence as a grade. It SHALL show data origin
+  labels such as official API, official publication, city estimate, or calculated.
+- The cost breakdown MUST provide a hoverable desktop and tappable mobile
+  explanation of every visible data-origin label.
+- Confidence levels MUST remain available in API metadata and internal source
+  validation for monitoring, warnings, and administrative views.
 - The UI MUST distinguish source provenance from estimate confidence. Official
   provenance does not automatically imply high confidence when the final amount
   depends on material assumptions or calculations.

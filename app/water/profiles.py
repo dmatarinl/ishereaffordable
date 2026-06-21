@@ -37,7 +37,7 @@ REFERENCE_MONTHLY_M3 = 6.0
 WATER_PROFILE_METHODOLOGY = (
     "Spain has no single household water tariff: providers use local fixed fees, "
     "consumption bands, sanitation charges and taxes. Until city tariff adapters "
-    "are implemented, these profiles scale the low-confidence city seed from its "
+    "are implemented, these profiles scale the current city estimate from its "
     "6 m3/month reference. Actual bills are not necessarily linear."
 )
 
@@ -115,13 +115,13 @@ def apply_water_profile(
     if profile == WaterProfile.STANDARD:
         scenario_methodology = (
             f"Standard water usage scenario at {profile_definition.monthly_m3:g} "
-            "m3/month, using the current low-confidence city seed as its reference."
+            "m3/month, using the current city estimate as its reference."
         )
     else:
         scenario_methodology = (
             f"{profile_definition.label} water usage scenario at "
             f"{profile_definition.monthly_m3:g} m3/month, estimated by scaling "
-            f"the low-confidence {reference_m3:g} m3/month city seed."
+            f"the {reference_m3:g} m3/month city estimate."
         )
 
     details = {
@@ -155,6 +155,6 @@ def water_profile_assumptions(profile: WaterProfile) -> list[str]:
     return [
         f"{profile_definition.monthly_m3:g} m3/month water usage "
         f"({profile_definition.label.lower()} profile)",
-        "Water remains a low-confidence city seed scaled as a simple scenario",
+        "Water uses the current city estimate scaled as a simple scenario",
         "Municipal fixed fees, tariff bands and taxes are not yet modelled",
     ]

@@ -342,16 +342,6 @@
         text-transform: uppercase;
       }
 
-      .badge.low {
-        background: #fff0e7;
-        color: var(--warn);
-      }
-
-      .badge.high {
-        background: #e8f4ea;
-        color: #236b38;
-      }
-
       .badge.mode {
         background: #e9f3f1;
         color: var(--accent-dark);
@@ -420,9 +410,10 @@
           width: min(338px, calc(100vw - 52px));
         }
 
-        .confidence-help .profile-tooltip {
+        .source-help .profile-tooltip {
           left: -140px;
         }
+
       }
     </style>
   </head>
@@ -438,7 +429,7 @@
           <h1>Spain living costs, source by source.</h1>
           <p class="intro">
             Pick a supported city and see the monthly target for one adult renting
-            a one-bedroom home, with each cost tied to a source and confidence level.
+            a one-bedroom home, with each cost tied to a source and methodology.
           </p>
         </div>
 
@@ -584,21 +575,9 @@
         official_api: "Official API",
         official_publication: "Official publication",
         permitted_scrape: "Permitted scrape",
-        manual_seed: "Cached fallback",
+        manual_seed: "City estimate",
         calculated: "Calculated",
         unavailable: "Unavailable",
-      };
-
-      const confidenceLabels = {
-        high: "High confidence",
-        medium: "Medium confidence",
-        low: "Low confidence",
-      };
-
-      const confidenceDescriptions = {
-        high: "Current authoritative data with minimal assumptions.",
-        medium: "Legitimate source data combined with maintained assumptions or calculations.",
-        low: "Fallback, stale, incomplete, or strongly assumption-dependent data.",
       };
 
       async function loadCities() {
@@ -715,9 +694,6 @@
 
       function renderLineItem(item, currency) {
         const label = categoryLabels[item.category] ?? item.label;
-        const confidenceLabel = confidenceLabels[item.confidence] ?? item.confidence;
-        const confidenceDescription = confidenceDescriptions[item.confidence] ?? "";
-        const confidenceClass = `badge confidence ${item.confidence}`;
         const dataModeLabel = dataModeLabels[item.data_mode] ?? item.data_mode;
         const dataModeClass = `badge mode ${item.data_mode}`;
         const sourceTimeline = renderSourceTimeline(item);
@@ -727,7 +703,6 @@
               <div class="row-title">
                 <span>${label}</span>
                 <span class="${dataModeClass}">${dataModeLabel}</span>
-                <span class="${confidenceClass}" title="${confidenceDescription}">${confidenceLabel}</span>
               </div>
               <div class="source">
                 <span class="source-meta">${item.source_name} · ${sourceTimeline}</span>
@@ -749,7 +724,7 @@
           : "";
 
         if (item.data_mode === "manual_seed") {
-          return `cached fallback ${cachedAt}${validUntil}`;
+          return `city estimate cached ${cachedAt}${validUntil}`;
         }
         if (item.data_mode === "official_api") {
           return `official source observed ${observedAt} · cached ${cachedAt}${validUntil}`;
@@ -799,22 +774,18 @@
           </div>
           <div class="breakdown-heading">
             <strong>Cost breakdown</strong>
-            <details class="profile-help confidence-help">
+            <details class="profile-help source-help">
               <summary
-                aria-label="What do confidence badges mean?"
-                title="What do confidence badges mean?"
+                aria-label="What do source labels mean?"
+                title="What do source labels mean?"
               >i</summary>
               <div class="profile-tooltip">
-                <strong>Confidence measures estimate reliability</strong>
-                <p>
-                  It does not describe price or consumption. The source badge
-                  shows where the data came from; confidence rates the final
-                  amount displayed after any assumptions and calculations.
-                </p>
+                <strong>How each amount is sourced</strong>
                 <ul>
-                  <li><strong>High confidence:</strong> current authoritative data with minimal assumptions.</li>
-                  <li><strong>Medium confidence:</strong> legitimate source data combined with maintained assumptions or calculations.</li>
-                  <li><strong>Low confidence:</strong> fallback, stale, incomplete, or strongly assumption-dependent data.</li>
+                  <li><strong>Official API:</strong> current data retrieved from an official API and cached on our server.</li>
+                  <li><strong>Official publication:</strong> a tariff, average, or rule taken from an official public document.</li>
+                  <li><strong>City estimate:</strong> a maintained city reference used while the preferred source integration is pending.</li>
+                  <li><strong>Calculated:</strong> an amount derived by the app from the selected profile and displayed costs.</li>
                 </ul>
               </div>
             </details>
@@ -826,6 +797,7 @@
         `;
 
         result.querySelectorAll(".profile-help").forEach(setupHoverHelp);
+
       }
 
       form.addEventListener("submit", (event) => {

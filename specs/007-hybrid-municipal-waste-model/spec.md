@@ -18,7 +18,7 @@ The default result uses the strongest available city-level method in this order:
 2. A representative estimate calculated from an official tariff rule and the
    selected household profile.
 3. The midpoint of an official range, with that range visible in methodology.
-4. A visibly labelled low-confidence manual fallback.
+4. A visibly labelled manual city estimate, retaining internal low confidence.
 
 The model supports reusable rule types rather than one calculator implementation
 per city:
@@ -43,8 +43,9 @@ required bill components.
 
 - Official municipal pages and ordinances MUST use
   `data_mode=official_publication`, not `official_api`.
-- Representative estimates MUST use medium confidence.
-- Manual fallbacks MUST use low confidence and produce a warning.
+- Representative estimates MUST retain medium confidence in API metadata.
+- Manual fallbacks MUST retain low confidence in API metadata and produce a
+  warning, while the public badge uses the neutral `City estimate` label.
 - Every official rule MUST expose its tariff year, validity, source URL, annual
   amount, calculation kind, required exact inputs, and whether the amount is
   exact.
