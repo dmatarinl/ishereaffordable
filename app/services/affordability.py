@@ -9,6 +9,7 @@ from app.gas.profiles import (
     GasProfile,
     gas_profile_assumptions,
 )
+from app.public_transport.fares import public_transport_assumption
 from app.services.refresh import apply_request_profiles
 from app.storage.database import CostObservationRepository
 from app.trash_tax.rules import municipal_waste_assumptions
@@ -92,6 +93,11 @@ class AffordabilityService:
             for item in adjusted_observations
             if item.category.value == "trash_tax"
         )
+        public_transport = next(
+            item
+            for item in adjusted_observations
+            if item.category.value == "public_transport"
+        )
 
         return calculator.estimate(
             CityCostInputs(
@@ -113,6 +119,7 @@ class AffordabilityService:
                     *gas_profile_assumptions(gas_profile),
                     *water_profile_assumptions(water_profile),
                     *municipal_waste_assumptions(municipal_waste),
+                    public_transport_assumption(public_transport.details),
                 ],
             )
         )

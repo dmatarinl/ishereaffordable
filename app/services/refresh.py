@@ -10,12 +10,13 @@ from app.providers.base import CostProvider
 from app.providers.boe_gas import BoeGasTurProvider
 from app.providers.esios import EsiosElectricityProvider
 from app.providers.municipal_waste import HybridMunicipalWasteProvider
+from app.providers.public_transport import OfficialTransportFareProvider
 from app.providers.seed import (
     SeedFoodBasketProvider,
     SeedHousingProvider,
-    SeedTransportProvider,
     SeedUtilityProvider,
 )
+from app.public_transport.fares import MODEL_VERSION as TRANSPORT_MODEL_VERSION
 from app.storage.database import CostObservationRepository
 from app.trash_tax.rules import MODEL_VERSION, apply_municipal_waste_profile
 from app.water.profiles import WaterProfile, apply_water_profile
@@ -54,7 +55,7 @@ def default_providers() -> list[CostProvider]:
         ),
         SeedUtilityProvider(),
         HybridMunicipalWasteProvider(),
-        SeedTransportProvider(),
+        OfficialTransportFareProvider(),
     ]
 
 
@@ -228,10 +229,19 @@ def _needs_profile_ready_observations(repository: CostObservationRepository) -> 
         ),
         None,
     )
-    if gas is None or tax is None:
+    transport = next(
+        (
+            item
+            for item in observations
+            if item.category.value == "public_transport"
+        ),
+        None,
+    )
+    if gas is None or tax is None or transport is None:
         return True
 
     return (
         "gas_terms" not in gas.details
         or tax.details.get("tariff_model_version") != MODEL_VERSION
+        or transport.details.get("model_version") != TRANSPORT_MODEL_VERSION
     )

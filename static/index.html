@@ -375,6 +375,21 @@
         font-weight: 750;
       }
 
+      .calculation-basis {
+        display: grid;
+        gap: 3px;
+        margin-top: 8px;
+        padding-left: 10px;
+        border-left: 3px solid var(--accent);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .calculation-basis strong {
+        color: var(--ink);
+      }
+
       .warnings {
         margin-top: 16px;
         padding: 12px;
@@ -554,6 +569,14 @@
           maximumFractionDigits: 0,
         }).format(value);
 
+      const formatFare = (value, currency) =>
+        new Intl.NumberFormat("en", {
+          style: "currency",
+          currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }).format(value);
+
       const formatDate = (value) =>
         new Intl.DateTimeFormat("en", {
           dateStyle: "medium",
@@ -708,8 +731,34 @@
                 <span class="source-meta">${item.source_name} · ${sourceTimeline}</span>
                 <br />${item.methodology}
               </div>
+              ${renderTransportBasis(item, currency)}
             </div>
             <strong>${formatMoney(item.monthly_amount, currency)}</strong>
+          </div>
+        `;
+      }
+
+      function renderTransportBasis(item, currency) {
+        if (item.category !== "public_transport") return "";
+
+        const details = item.details ?? {};
+        const included = (details.modes_included ?? []).join(", ");
+        const excluded = (details.excluded_modes ?? []).join(", ");
+        const baseFare = details.base_monthly_amount_eur;
+        const fareComparison = baseFare
+          ? `Current fare ${formatFare(item.monthly_amount, currency)}; published base fare ${formatFare(baseFare, currency)}.`
+          : `Current fare ${formatFare(item.monthly_amount, currency)}.`;
+        const excludedLine = excluded
+          ? `<span><strong>Not included:</strong> ${excluded}.</span>`
+          : "";
+
+        return `
+          <div class="calculation-basis">
+            <span><strong>Calculation used:</strong> ${details.product_name}.</span>
+            <span>${details.calculation_summary}</span>
+            <span><strong>Included:</strong> ${included}.</span>
+            ${excludedLine}
+            <span>${fareComparison}</span>
           </div>
         `;
       }

@@ -29,7 +29,7 @@ as official.
 | Water | Municipal/provider tariff data | Permitted provider/city scrape | Manual seed | 180 days |
 | Trash tax | Municipal ordinance/official publication/open data | Permitted city tax-page scrape | Manual seed | 365 days |
 | Food | Supermarket API/feed | Permitted supermarket scrape | Manual basket seed | 7 days |
-| Public transport | Official transport authority fares | Permitted fare-page scrape | Manual seed | 90 days |
+| Public transport | Official transport authority fare/API or publication | Permitted fare-page scrape | Manual seed | Through stated tariff validity, reviewed at least annually |
 | Safety margin | Calculated formula | None | None | Always current |
 
 ## Confidence Rules

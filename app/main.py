@@ -13,6 +13,8 @@ from app.electricity.profiles import (
     electricity_profile_catalog,
 )
 from app.gas.profiles import DEFAULT_GAS_PROFILE, GasProfile, gas_profile_catalog
+from app.public_transport.fares import MODEL_VERSION as TRANSPORT_MODEL_VERSION
+from app.public_transport.fares import transport_fare_catalog
 from app.services.affordability import AffordabilityService
 from app.services.refresh import ensure_seed_data
 from app.sources.catalog import source_rules
@@ -117,6 +119,16 @@ def trash_tax_rules():
         "version": MODEL_VERSION,
         "rules": municipal_waste_tariff_catalog(),
         "fallback_cities": fallback_cities,
+    }
+
+
+@app.get("/api/public-transport/fares")
+def public_transport_fares():
+    return {
+        "model": "official-city-fare",
+        "version": TRANSPORT_MODEL_VERSION,
+        "profile": "adult without special discounts",
+        "fares": transport_fare_catalog(),
     }
 
 

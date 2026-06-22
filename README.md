@@ -41,6 +41,7 @@ curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR&electrici
 curl "http://127.0.0.1:8000/api/affordability?city=Madrid&currency=EUR&electricity_profile=high&safety_margin_percent=10"
 curl "http://127.0.0.1:8000/api/cities"
 curl "http://127.0.0.1:8000/api/electricity/profiles"
+curl "http://127.0.0.1:8000/api/public-transport/fares"
 curl "http://127.0.0.1:8000/api/sources/status"
 curl "http://127.0.0.1:8000/api/sources/rules"
 ```
@@ -70,6 +71,7 @@ Data mode is intentionally separate from confidence:
 
 - `manual_seed`: cached fallback data maintained inside the app.
 - `official_api`: fetched from an official API or open-data endpoint.
+- `official_publication`: maintained from an official tariff or rule.
 - `permitted_scrape`: scraped only where source rules allow it.
 - `calculated`: produced by the Is Here Affordable formula.
 - `unavailable`: no trustworthy value is available.
@@ -95,8 +97,7 @@ Source work follows the project constitution in
 spec-driven feature is
 [`specs/001-source-transparency-fallback-labeling/spec.md`](specs/001-source-transparency-fallback-labeling/spec.md).
 
-The current implementation includes source-aware seed providers for all eight
-Spain MVP cities:
+The current implementation supports all eight Spain MVP cities:
 
 - Madrid
 - Barcelona
@@ -124,6 +125,10 @@ Source integrations:
 - Water and trash tax: municipal/provider tariffs.
 - Food: fixed basket refreshed from supermarket adapters for Mercadona,
   Carrefour, and Dia/Alcampo where allowed by terms and robots rules.
+- Public transport: maintained 2026 official adult fares. Each observation
+  records the product or 40-journey scenario, modes included, exclusions,
+  current and base fare where available, subsidy, and validity period. See
+  [`specs/008-public-transport-methodology/spec.md`](specs/008-public-transport-methodology/spec.md).
 
 ## Food Basket
 

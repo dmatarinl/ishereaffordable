@@ -29,7 +29,33 @@ def test_affordability_endpoint_returns_source_breakdown() -> None:
     assert rent["cached_at"]
     assert "observed" not in rent["source_name"].lower()
     assert safety_margin["data_mode"] == "calculated"
+    transport = next(
+        item
+        for item in payload["line_items"]
+        if item["category"] == "public_transport"
+    )
+    assert transport["data_mode"] == "official_publication"
+    assert transport["details"]["product_name"] == (
+        "Abono Transporte 30 días - Zona A"
+    )
+    assert "Metro" in transport["details"]["modes_included"]
     assert payload["warnings"]
+
+
+def test_public_transport_fares_endpoint_exposes_methodology() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/public-transport/fares")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["model"] == "official-city-fare"
+    assert payload["version"] == "2026.2"
+    assert len(payload["fares"]) == 8
+    zaragoza = next(
+        fare for fare in payload["fares"] if fare["city_key"] == "zaragoza"
+    )
+    assert zaragoza["monthly_journeys"] == 40
+    assert zaragoza["unit_fare_eur"] == 0.55
 
 
 def test_electricity_profiles_endpoint_lists_supported_profiles() -> None:

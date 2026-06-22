@@ -72,3 +72,24 @@ def test_calculated_safety_margin_is_never_stale() -> None:
 
     assert not is_stale(item, SOURCE_RULES[CostCategory.SAFETY_MARGIN])
     assert validate_line_items([item]) == []
+
+
+def test_expired_official_tariff_produces_specific_warning() -> None:
+    item = CostLineItem(
+        category=CostCategory.PUBLIC_TRANSPORT,
+        label="Public transport",
+        monthly_amount=20,
+        currency="EUR",
+        data_mode=DataMode.OFFICIAL_PUBLICATION,
+        source_name="Official transport authority",
+        source_url="https://example.com/transport",
+        observed_at=datetime.now(UTC) - timedelta(days=30),
+        valid_until=datetime.now(UTC) - timedelta(days=1),
+        confidence=Confidence.MEDIUM,
+        methodology="Adult 30-day official fare.",
+    )
+
+    warnings = validate_line_items([item])
+
+    assert len(warnings) == 1
+    assert "tariff validity ended" in warnings[0]

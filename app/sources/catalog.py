@@ -137,13 +137,17 @@ SOURCE_RULES = {
         fallback="Manual transport seed",
         allowed_data_modes=[
             DataMode.OFFICIAL_API,
+            DataMode.OFFICIAL_PUBLICATION,
             DataMode.PERMITTED_SCRAPE,
             DataMode.MANUAL_SEED,
             DataMode.UNAVAILABLE,
         ],
-        freshness_days=90,
+        freshness_days=365,
         stale_confidence=Confidence.LOW,
-        user_guidance="Transport fares should be refreshed quarterly.",
+        user_guidance=(
+            "Transport must identify the adult product or journey scenario, "
+            "included modes, current fare, subsidy, and validity period."
+        ),
     ),
     CostCategory.SAFETY_MARGIN: SourceRule(
         category=CostCategory.SAFETY_MARGIN,
@@ -186,7 +190,12 @@ def validate_line_items(line_items: list[CostLineItem]) -> list[str]:
         if item.data_mode == DataMode.UNAVAILABLE:
             warnings.append(f"{item.label} is unavailable.")
 
-        if is_stale(item, rule):
+        if validity_has_ended(item):
+            warnings.append(
+                f"{item.label} tariff validity ended on "
+                f"{item.valid_until.date().isoformat()}; refresh the official source."
+            )
+        elif is_stale(item, rule):
             warnings.append(
                 f"{item.label} is stale; {rule.label} should refresh within "
                 f"{rule.freshness_days} days."
@@ -197,5 +206,11 @@ def validate_line_items(line_items: list[CostLineItem]) -> list[str]:
 def is_stale(item: CostLineItem, rule: SourceRule) -> bool:
     if rule.freshness_days == "always":
         return False
+    if item.valid_until is not None:
+        return validity_has_ended(item)
     reference_time = item.cached_at or item.observed_at
     return reference_time < datetime.now(UTC) - timedelta(days=rule.freshness_days)
+
+
+def validity_has_ended(item: CostLineItem) -> bool:
+    return item.valid_until is not None and item.valid_until < datetime.now(UTC)
