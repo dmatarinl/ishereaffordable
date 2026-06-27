@@ -116,9 +116,9 @@ Source integrations:
 - Rent: paused on portal integrations until a legally and economically viable
   source is available. The preferred path is official rental reference/open data
   first, then an approved real-estate API, and only then permitted scraping.
-  The previous Idealista request draft remains in
-  [`docs/idealista-api-request.md`](docs/idealista-api-request.md) for context,
-  but Idealista is not the current default target.
+  The generic rent-source request draft remains in
+  [`docs/rent-source-access-request.md`](docs/rent-source-access-request.md)
+  for future provider outreach.
 - Electricity: eSIOS/PVPC data when `ESIOS_API_TOKEN` is configured. Without
   that token, the app keeps a low-confidence electricity fallback so the MVP
   remains usable.
@@ -212,16 +212,43 @@ de Barcelona's published domestic bands that support these boundaries.
 
 ## Deployment
 
-The repo includes `render.yaml` and `Procfile`.
+The repo includes `render.yaml`, `Procfile`, and `netlify.toml`.
+
+Recommended production shape:
+
+- Netlify serves the static frontend and owns `ishereaffordable.com`.
+- The Python FastAPI backend runs on a server platform such as Render.
+- Netlify proxies `/api/*` to the backend through `API_ORIGIN`.
+- Provider tokens stay only in the backend environment.
+- Public users read cached observations from our server, never directly from
+  eSIOS, BOE, supermarkets, or rent sources.
+
+### Netlify Frontend
+
+The Netlify project is configured to publish `static/`.
+
+Before the Netlify site can serve live data, set:
+
+```bash
+API_ORIGIN=https://your-python-backend.example.com
+```
+
+Do not set `ESIOS_API_TOKEN` or other provider credentials in Netlify unless a
+future backend component explicitly needs them. The current Netlify layer is
+only a frontend/API proxy.
+
+### Python Backend
 
 For `ishereaffordable.com` on Render:
 
 1. Push this repo to GitHub.
 2. Create a Render Blueprint from `render.yaml`.
-3. Add `ishereaffordable.com` as a custom domain in Render.
-4. Point the domain DNS to Render's target.
-5. Set production environment variables.
-6. Add a Render Cron Job that runs `python -m app.jobs.refresh_all` daily.
+3. Set production environment variables, including provider tokens.
+4. Use PostgreSQL for production by setting `DATABASE_URL`.
+5. Add a Render Cron Job that runs `python -m app.jobs.refresh_all` daily.
+6. Copy the Render service URL into Netlify as `API_ORIGIN`.
+7. Add `ishereaffordable.com` as a custom domain in Netlify.
+8. Point the domain DNS to Netlify's target.
 
 ## Environment
 
@@ -231,7 +258,6 @@ APP_ENV=development
 DEFAULT_CURRENCY=EUR
 SAFETY_MARGIN_PERCENT=15
 DATABASE_URL=sqlite:///./data/affordability.db
-IDEALISTA_API_KEY=
 ESIOS_API_TOKEN=
 ESIOS_PVPC_INDICATOR_ID=1001
 ESIOS_LOOKBACK_DAYS=30

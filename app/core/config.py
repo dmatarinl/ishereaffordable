@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     default_currency: str = "EUR"
     safety_margin_percent: float = 15
     database_url: str = "sqlite:///./data/affordability.db"
-    idealista_api_key: str | None = None
     esios_api_token: str | None = None
     esios_pvpc_indicator_id: int = 1001
     esios_lookback_days: int = 30

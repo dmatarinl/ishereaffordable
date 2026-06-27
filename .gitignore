@@ -11,3 +11,8 @@ data/*.db-*
 dist/
 build/
 *.egg-info/
+
+# Local Netlify and AI tooling
+.netlify/
+.agents/
+skills-lock.json
