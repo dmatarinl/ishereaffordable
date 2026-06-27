@@ -1,0 +1,43 @@
+name: Refresh cost observations
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_ENV: production
+      DEFAULT_CURRENCY: EUR
+      SAFETY_MARGIN_PERCENT: "15"
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ESIOS_API_TOKEN: ${{ secrets.ESIOS_API_TOKEN }}
+      ESIOS_PVPC_INDICATOR_ID: "1001"
+      ESIOS_LOOKBACK_DAYS: "30"
+      ELECTRICITY_DEFAULT_PROFILE: standard
+      BOE_GAS_ENABLE_DISCOVERY: "true"
+      GAS_DEFAULT_PROFILE: standard
+      GAS_VAT_RATE_PERCENT: "21"
+      GAS_HYDROCARBONS_TAX_EUR_PER_KWH: "0.00234"
+      GAS_METER_RENTAL_MONTHLY_EUR: "0"
+      ENABLE_SUPERMARKET_SCRAPING: "false"
+      SOURCE_USER_AGENT: "IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh cached observations
+        run: python -m app.jobs.refresh_all

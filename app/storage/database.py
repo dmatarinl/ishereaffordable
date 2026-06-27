@@ -71,7 +71,15 @@ def create_database_engine(database_url: str) -> Engine:
         if sqlite_path != ":memory:":
             Path(sqlite_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
 
-    return create_engine(database_url, future=True)
+    return create_engine(_sqlalchemy_database_url(database_url), future=True)
+
+
+def _sqlalchemy_database_url(database_url: str) -> str:
+    if database_url.startswith("postgresql://"):
+        return database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    if database_url.startswith("postgres://"):
+        return database_url.replace("postgres://", "postgresql+psycopg://", 1)
+    return database_url
 
 
 class CostObservationRepository:

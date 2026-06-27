@@ -218,8 +218,10 @@ Recommended production shape:
 
 - Netlify serves the static frontend and owns `ishereaffordable.com`.
 - The Python FastAPI backend runs on a server platform such as Render.
+- Neon or another hosted Postgres provider stores cached observations.
+- GitHub Actions runs the daily refresh job.
 - Netlify proxies `/api/*` to the backend through `API_ORIGIN`.
-- Provider tokens stay only in the backend environment.
+- Provider tokens stay only in backend/automation environments.
 - Public users read cached observations from our server, never directly from
   eSIOS, BOE, supermarkets, or rent sources.
 
@@ -239,16 +241,24 @@ only a frontend/API proxy.
 
 ### Python Backend
 
-For `ishereaffordable.com` on Render:
+No-payment-oriented path for `ishereaffordable.com`:
 
-1. Push this repo to GitHub.
-2. Create a Render Blueprint from `render.yaml`.
-3. Set production environment variables, including provider tokens.
-4. Use PostgreSQL for production by setting `DATABASE_URL`.
-5. Add a Render Cron Job that runs `python -m app.jobs.refresh_all` daily.
+1. Create a hosted Postgres database, such as Neon free tier.
+2. Set GitHub repository secrets:
+   - `DATABASE_URL`
+   - `ESIOS_API_TOKEN`
+3. Deploy the Render web service from `render.yaml`.
+4. Set Render environment variables:
+   - `DATABASE_URL`
+   - `ESIOS_API_TOKEN`
+5. Run the `Refresh cost observations` GitHub Actions workflow once manually.
 6. Copy the Render service URL into Netlify as `API_ORIGIN`.
 7. Add `ishereaffordable.com` as a custom domain in Netlify.
 8. Point the domain DNS to Netlify's target.
+
+The paid-gated Render resources are intentionally not used in this setup:
+Render Postgres is replaced by hosted Postgres, and Render Cron is replaced by
+GitHub Actions schedule.
 
 ## Environment
 

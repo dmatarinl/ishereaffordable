@@ -12,33 +12,27 @@ services:
         value: EUR
       - key: SAFETY_MARGIN_PERCENT
         value: 15
+      - key: DATABASE_URL
+        sync: false
+      - key: ESIOS_API_TOKEN
+        sync: false
       - key: ESIOS_PVPC_INDICATOR_ID
         value: 1001
       - key: ESIOS_LOOKBACK_DAYS
         value: 30
       - key: ELECTRICITY_DEFAULT_PROFILE
         value: standard
+      - key: BOE_GAS_ENABLE_DISCOVERY
+        value: true
+      - key: GAS_DEFAULT_PROFILE
+        value: standard
+      - key: GAS_VAT_RATE_PERCENT
+        value: 21
+      - key: GAS_HYDROCARBONS_TAX_EUR_PER_KWH
+        value: 0.00234
+      - key: GAS_METER_RENTAL_MONTHLY_EUR
+        value: 0
       - key: ENABLE_SUPERMARKET_SCRAPING
         value: false
       - key: SOURCE_USER_AGENT
         value: IsHereAffordableBot/0.1 (+https://ishereaffordable.com)
-
-cronJobs:
-  - name: refresh-cost-observations
-    runtime: python
-    schedule: "0 4 * * *"
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -m app.jobs.refresh_all
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: DEFAULT_CURRENCY
-        value: EUR
-      - key: SAFETY_MARGIN_PERCENT
-        value: 15
-      - key: ESIOS_PVPC_INDICATOR_ID
-        value: 1001
-      - key: ESIOS_LOOKBACK_DAYS
-        value: 30
-      - key: ELECTRICITY_DEFAULT_PROFILE
-        value: standard
