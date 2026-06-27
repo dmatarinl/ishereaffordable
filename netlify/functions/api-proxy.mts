@@ -4,6 +4,7 @@ declare const Netlify: {
   };
 };
 
+const EXPECTED_API_ORIGIN = "https://is-here-affordable-api.onrender.com";
 const PROXY_PREFIXES = ["/.netlify/functions/api-proxy", "/api-proxy"];
 
 function jsonResponse(body: unknown, status: number) {
@@ -20,6 +21,11 @@ function backendUrlFor(req: Request) {
   const apiOrigin = Netlify.env.get("API_ORIGIN");
   if (!apiOrigin) {
     return null;
+  }
+
+  const parsedApiOrigin = new URL(apiOrigin);
+  if (parsedApiOrigin.origin !== EXPECTED_API_ORIGIN) {
+    throw new Error("API_ORIGIN is not allowlisted");
   }
 
   const incomingUrl = new URL(req.url);
@@ -47,15 +53,25 @@ export default async (req: Request) => {
     return jsonResponse({ detail: "Method not allowed" }, 405);
   }
 
-  const backendUrl = backendUrlFor(req);
-  if (!backendUrl) {
-    return jsonResponse(
-      {
-        detail:
-          "API_ORIGIN is not configured. Deploy the Python API and set the Netlify environment variable to enable live data.",
-      },
-      503,
-    );
+  let backendUrl: URL | null;
+  try {
+    backendUrl = backendUrlFor(req);
+    if (!backendUrl) {
+      return jsonResponse(
+        {
+          detail:
+            "API_ORIGIN is not configured. Deploy the Python API and set the Netlify environment variable to enable live data.",
+        },
+        503,
+      );
+    }
+  } catch {
+    return jsonResponse({ detail: "Backend API origin is not allowed" }, 503);
+  }
+
+  const proxySecret = Netlify.env.get("BACKEND_PROXY_SECRET");
+  if (!proxySecret) {
+    return jsonResponse({ detail: "Backend proxy secret is not configured" }, 503);
   }
 
   try {
@@ -63,6 +79,7 @@ export default async (req: Request) => {
       method: req.method,
       headers: {
         accept: req.headers.get("accept") ?? "application/json",
+        "x-ishereaffordable-proxy-secret": proxySecret,
         "user-agent": "IsHereAffordableNetlifyProxy/0.1",
       },
     });
@@ -89,7 +106,6 @@ export const config = {
     "/api/gas/profiles",
     "/api/public-transport/fares",
     "/api/sources/rules",
-    "/api/sources/status",
     "/api/trash-tax/rules",
     "/api/water/profiles",
   ],

@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -18,6 +19,7 @@ from app.gas.profiles import (
 
 BOE_HOME_URL = "https://www.boe.es/"
 BOE_SUMMARY_API_URL = "https://www.boe.es/datosabiertos/api/boe/sumario"
+BOE_ALLOWED_HOSTS = frozenset({"boe.es", "www.boe.es"})
 GAS_TUR_TITLE_KEYWORDS = ("tarifa", "ultimo recurso", "gas natural")
 GAS_TUR_RATE_CODES = (
     "TUR.1",
@@ -64,7 +66,7 @@ class BoeGasTurProvider:
         client: httpx.Client | None = None,
     ) -> None:
         self.configured_source_url = source_url
-        self.source_url = normalise_boe_document_url(source_url) if source_url else None
+        self.source_url = source_url
         self.default_profile = GasProfile(default_profile)
         self.gas_bill_assumptions = (
             gas_bill_assumptions or GasBillAssumptions(
@@ -74,7 +76,7 @@ class BoeGasTurProvider:
             )
         )
         self.enable_discovery = enable_discovery
-        self.summary_api_url = summary_api_url.rstrip("/")
+        self.summary_api_url = _validated_boe_url(summary_api_url).rstrip("/")
         self.user_agent = user_agent
         self.client = client
         self._cached_document: GasTurDocument | None = None
@@ -90,7 +92,9 @@ class BoeGasTurProvider:
         if self._cached_document is not None:
             return self._cached_document
 
-        source_url = self.source_url
+        source_url = (
+            normalise_boe_document_url(self.source_url) if self.source_url else None
+        )
         if source_url is None:
             if not self.enable_discovery:
                 raise ValueError("Missing BOE_GAS_TUR_URL and discovery is disabled")
@@ -259,7 +263,16 @@ def parse_gas_tur_terms_catalog(raw_text: str) -> dict[str, GasTurTerm]:
 def normalise_boe_document_url(source_url: str) -> str:
     match = re.search(r"(BOE-A-\d{4}-\d+)", source_url, re.IGNORECASE)
     if match:
-        return f"https://www.boe.es/diario_boe/txt.php?id={match.group(1).upper()}"
+        return _validated_boe_url(
+            f"https://www.boe.es/diario_boe/txt.php?id={match.group(1).upper()}"
+        )
+    return _validated_boe_url(source_url)
+
+
+def _validated_boe_url(source_url: str) -> str:
+    parsed = urlparse(source_url)
+    if parsed.scheme != "https" or parsed.hostname not in BOE_ALLOWED_HOSTS:
+        raise ValueError("BOE source URL must use https://boe.es or https://www.boe.es")
     return source_url
 
 

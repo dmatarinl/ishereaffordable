@@ -233,11 +233,14 @@ Before the Netlify site can serve live data, set:
 
 ```bash
 API_ORIGIN=https://your-python-backend.example.com
+BACKEND_PROXY_SECRET=<same-random-value-as-render>
 ```
 
 Do not set `ESIOS_API_TOKEN` or other provider credentials in Netlify unless a
 future backend component explicitly needs them. The current Netlify layer is
-only a frontend/API proxy.
+only a frontend/API proxy. `BACKEND_PROXY_SECRET` is not a provider credential;
+it is a shared secret used only so the backend can reject direct public API
+requests that do not pass through Netlify.
 
 ### Python Backend
 
@@ -251,10 +254,12 @@ No-payment-oriented path for `ishereaffordable.com`:
 4. Set Render environment variables:
    - `DATABASE_URL`
    - `ESIOS_API_TOKEN`
-5. Run the `Refresh cost observations` GitHub Actions workflow once manually.
-6. Copy the Render service URL into Netlify as `API_ORIGIN`.
-7. Add `ishereaffordable.com` as a custom domain in Netlify.
-8. Point the domain DNS to Netlify's target.
+   - `BACKEND_PROXY_SECRET`
+5. Set the same `BACKEND_PROXY_SECRET` value in Netlify production env vars.
+6. Run the `Refresh cost observations` GitHub Actions workflow once manually.
+7. Copy the Render service URL into Netlify as `API_ORIGIN`.
+8. Add `ishereaffordable.com` as a custom domain in Netlify.
+9. Point the domain DNS to Netlify's target.
 
 The paid-gated Render resources are intentionally not used in this setup:
 Render Postgres is replaced by hosted Postgres, and Render Cron is replaced by
@@ -278,6 +283,7 @@ GAS_DEFAULT_PROFILE=standard
 GAS_VAT_RATE_PERCENT=21
 GAS_HYDROCARBONS_TAX_EUR_PER_KWH=0.00234
 GAS_METER_RENTAL_MONTHLY_EUR=0
+BACKEND_PROXY_SECRET=
 ENABLE_SUPERMARKET_SCRAPING=false
 SOURCE_USER_AGENT="IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"
 ```

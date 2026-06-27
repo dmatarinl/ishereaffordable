@@ -32,6 +32,8 @@ services:
         value: 0.00234
       - key: GAS_METER_RENTAL_MONTHLY_EUR
         value: 0
+      - key: BACKEND_PROXY_SECRET
+        sync: false
       - key: ENABLE_SUPERMARKET_SCRAPING
         value: false
       - key: SOURCE_USER_AGENT

@@ -241,6 +241,21 @@ def test_boe_gas_provider_normalizes_pdf_url() -> None:
     )
 
 
+def test_boe_gas_provider_rejects_non_boe_source_url() -> None:
+    city = get_supported_city("Madrid")
+    assert city is not None
+
+    item = BoeGasTurProvider(
+        source_url="https://example.com/gas-tariff.xml",
+        user_agent="test-agent",
+        enable_discovery=False,
+        client=FakeTextClient(""),
+    ).fetch_city(city)[0]
+
+    assert item.data_mode.value == "manual_seed"
+    assert "BOE source URL must use" in item.details["fallback_reason"]
+
+
 class FakeBoeOpenDataClient:
     def __init__(self, summary_payload: dict, document_text: str) -> None:
         self.summary_payload = summary_payload

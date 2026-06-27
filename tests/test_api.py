@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 
 from app.affordability.models import SourceStatus
+from app.core.config import settings
 from app.main import app, public_source_statuses
 
 
@@ -289,6 +290,33 @@ def test_cities_endpoint_lists_spain_mvp_cities() -> None:
     cities = response.json()["cities"]
     assert len(cities) == 8
     assert cities[0]["key"] == "madrid"
+
+
+def test_api_routes_require_proxy_secret_when_configured() -> None:
+    original_secret = settings.backend_proxy_secret
+    settings.backend_proxy_secret = "test-shared-secret"
+    try:
+        with TestClient(app) as client:
+            response = client.get("/api/cities")
+
+        assert response.status_code == 404
+    finally:
+        settings.backend_proxy_secret = original_secret
+
+
+def test_api_routes_accept_proxy_secret_when_configured() -> None:
+    original_secret = settings.backend_proxy_secret
+    settings.backend_proxy_secret = "test-shared-secret"
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/cities",
+                headers={"x-ishereaffordable-proxy-secret": "test-shared-secret"},
+            )
+
+        assert response.status_code == 200
+    finally:
+        settings.backend_proxy_secret = original_secret
 
 
 def test_sources_status_endpoint_returns_refresh_health() -> None:

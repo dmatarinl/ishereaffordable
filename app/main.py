@@ -1,7 +1,8 @@
+import secrets
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.affordability.calculator import AffordabilityCalculator
@@ -55,8 +56,28 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+production = settings.app_env == "production"
+app = FastAPI(
+    title=settings.app_name,
+    lifespan=lifespan,
+    docs_url=None if production else "/docs",
+    redoc_url=None if production else "/redoc",
+    openapi_url=None if production else "/openapi.json",
+)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.middleware("http")
+async def require_proxy_secret_for_api(request: Request, call_next):
+    if request.url.path.startswith("/api/") and settings.backend_proxy_secret:
+        provided = request.headers.get("x-ishereaffordable-proxy-secret")
+        if provided is None or not secrets.compare_digest(
+            provided,
+            settings.backend_proxy_secret,
+        ):
+            return JSONResponse({"detail": "Not found"}, status_code=404)
+
+    return await call_next(request)
 
 
 @app.get("/", include_in_schema=False)
