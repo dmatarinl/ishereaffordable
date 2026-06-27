@@ -2,12 +2,15 @@
 
 Feature ID: `003-idealista-api-request`
 Created: 2026-06-15
-Status: Ready for external request
+Status: Paused
 
 ## User Need
 
-The project needs Idealista Search API access before rent can move from manual
-fallback data to source-attributed market observations.
+This document preserves the previous Idealista API access request. Rent work is
+currently paused on Idealista because the commercial API path did not fit the
+MVP budget and data-depth needs. The active rent-source strategy is official
+rental reference/open data first, then an approved real-estate API if the
+licensing and cost work.
 
 ## Success Criteria
 

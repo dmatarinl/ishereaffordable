@@ -1,6 +1,9 @@
+from datetime import UTC, datetime
+
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.affordability.models import SourceStatus
+from app.main import app, public_source_statuses
 
 
 def test_affordability_endpoint_returns_source_breakdown() -> None:
@@ -296,6 +299,23 @@ def test_sources_status_endpoint_returns_refresh_health() -> None:
     assert response.json()["sources"]
 
 
+def test_public_source_status_hides_failed_provider_details() -> None:
+    status = SourceStatus(
+        source_id="esios_electricity",
+        source_name="eSIOS PVPC electricity",
+        status="failed",
+        last_started_at=datetime.now(UTC),
+        last_finished_at=datetime.now(UTC),
+        message="Madrid: 401 Unauthorized with x-api-key token abc123",
+    )
+
+    public_status = public_source_statuses([status])[0]
+
+    assert public_status.message == (
+        "Source refresh failed. Check server logs for details."
+    )
+
+
 def test_sources_rules_endpoint_returns_policy_catalog() -> None:
     with TestClient(app) as client:
         response = client.get("/api/sources/rules")
@@ -306,7 +326,7 @@ def test_sources_rules_endpoint_returns_policy_catalog() -> None:
     electricity = next(rule for rule in rules if rule["category"] == "electricity")
     gas = next(rule for rule in rules if rule["category"] == "gas")
 
-    assert rent["first_choice"] == "Idealista Search API or approved real-estate API"
+    assert rent["first_choice"] == "Official rental reference/open data"
     assert "manual_seed" in rent["allowed_data_modes"]
     assert rent["freshness_days"] == 7
     assert electricity["first_choice"] == "eSIOS API"

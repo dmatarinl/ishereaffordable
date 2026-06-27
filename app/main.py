@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.affordability.calculator import AffordabilityCalculator
+from app.affordability.models import SourceStatus
 from app.cities import SUPPORTED_CITIES, get_supported_city
 from app.core.config import settings
 from app.electricity.profiles import (
@@ -16,7 +17,7 @@ from app.gas.profiles import DEFAULT_GAS_PROFILE, GasProfile, gas_profile_catalo
 from app.public_transport.fares import MODEL_VERSION as TRANSPORT_MODEL_VERSION
 from app.public_transport.fares import transport_fare_catalog
 from app.services.affordability import AffordabilityService
-from app.services.refresh import ensure_seed_data
+from app.services.refresh import default_providers, ensure_seed_data
 from app.sources.catalog import source_rules
 from app.storage.database import CostObservationRepository
 from app.trash_tax.rules import (
@@ -75,7 +76,47 @@ def cities():
 
 @app.get("/api/sources/status")
 def sources_status():
-    return {"sources": repository.source_statuses()}
+    active_source_ids = {provider.source_id for provider in default_providers()}
+    active_statuses = [
+        status
+        for status in repository.source_statuses()
+        if status.source_id in active_source_ids
+    ]
+    return {"sources": public_source_statuses(active_statuses)}
+
+
+def public_source_statuses(statuses: list[SourceStatus]) -> list[SourceStatus]:
+    return [
+        status.model_copy(update={"message": _public_source_status_message(status)})
+        for status in statuses
+    ]
+
+
+def _public_source_status_message(status: SourceStatus) -> str | None:
+    if status.message is None:
+        return None
+    if status.status == "failed":
+        return "Source refresh failed. Check server logs for details."
+    if _contains_sensitive_term(status.message):
+        return "Source refresh completed with hidden operational details."
+    if len(status.message) > 240:
+        return f"{status.message[:237]}..."
+    return status.message
+
+
+def _contains_sensitive_term(message: str) -> bool:
+    sensitive_terms = (
+        "api_key",
+        "apikey",
+        "authorization",
+        "bearer",
+        "password",
+        "secret",
+        "token",
+        "x-api-key",
+    )
+    normalized = message.lower()
+    return any(term in normalized for term in sensitive_terms)
 
 
 @app.get("/api/sources/rules")

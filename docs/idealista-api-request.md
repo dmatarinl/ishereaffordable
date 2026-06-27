@@ -1,11 +1,15 @@
 # Idealista Search API Access Request
 
+Status: paused. Keep this document as historical context only. The active
+rent-source strategy is official rental reference/open data first, then an
+approved real-estate API if the licensing and cost work for the MVP.
+
 Use this document to request Idealista Search API access for the rent source in
-Is Here Affordable?.
+Is Here Affordable? if the commercial conditions become viable later.
 
 Access form: https://developers.idealista.com/access-request
 
-## Copy/Paste Project Description
+## Historical Copy/Paste Project Description
 
 Is Here Affordable? will be a public web app at https://ishereaffordable.com (not ready yet) that
 helps people understand the monthly amount they may need to live in a Spanish
@@ -13,10 +17,10 @@ city. The first version focuses on one adult living alone, renting a
 one-bedroom home, without a car, and currently supports Madrid, Barcelona,
 Valencia, Sevilla, Zaragoza, Málaga, Bilbao, and Alicante.
 
-I would like to use the Idealista Search API as the primary source for rental
-costs. Rent is the largest category in the estimate, so our goal is to replace
-our current low-confidence manual fallback values with source-attributed market
-data from Idealista.
+At the time of this draft, I wanted to evaluate the Idealista Search API as a
+possible source for rental costs. Rent is the largest category in the estimate,
+so the goal was to replace our current low-confidence manual fallback values
+with source-attributed market data from Idealista if the terms were viable.
 
 The app will query long-term rental listings for one-bedroom homes by city,
 calculate aggregated city-level rent statistics, and show those aggregate

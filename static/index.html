@@ -583,6 +583,31 @@
           timeStyle: "short",
         }).format(new Date(value));
 
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+
+      const escapeAttr = escapeHtml;
+
+      const cssToken = (value) =>
+        String(value ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
+
+      const safeExternalUrl = (value) => {
+        try {
+          const url = new URL(String(value ?? ""), window.location.origin);
+          if (url.protocol === "https:" || url.protocol === "http:") {
+            return url.href;
+          }
+        } catch (error) {
+          return "#";
+        }
+        return "#";
+      };
+
       const categoryLabels = {
         rent: "Rent",
         electricity: "Electricity",
@@ -607,7 +632,10 @@
         const response = await fetch("/api/cities");
         const payload = await response.json();
         citySelect.innerHTML = payload.cities
-          .map((city) => `<option value="${city.key}">${city.name}</option>`)
+          .map(
+            (city) =>
+              `<option value="${escapeAttr(city.key)}">${escapeHtml(city.name)}</option>`,
+          )
           .join("");
       }
 
@@ -621,10 +649,10 @@
                 <input
                   type="radio"
                   name="electricity_profile"
-                  value="${profile.key}"
+                  value="${escapeAttr(profile.key)}"
                   ${profile.key === payload.default ? "checked" : ""}
                 />
-                ${profile.label}
+                ${escapeHtml(profile.label)}
               </label>`,
           )
           .join("");
@@ -640,10 +668,10 @@
                 <input
                   type="radio"
                   name="gas_profile"
-                  value="${profile.key}"
+                  value="${escapeAttr(profile.key)}"
                   ${profile.key === payload.default ? "checked" : ""}
                 />
-                ${profile.label}
+                ${escapeHtml(profile.label)}
               </label>`,
           )
           .join("");
@@ -655,14 +683,14 @@
         waterProfileGroup.innerHTML = payload.profiles
           .map(
             (profile) =>
-              `<label title="${profile.description}">
+              `<label title="${escapeAttr(profile.description)}">
                 <input
                   type="radio"
                   name="water_profile"
-                  value="${profile.key}"
+                  value="${escapeAttr(profile.key)}"
                   ${profile.key === payload.default ? "checked" : ""}
                 />
-                ${profile.label}
+                ${escapeHtml(profile.label)}
               </label>`,
           )
           .join("");
@@ -670,19 +698,19 @@
         const profileReasons = payload.profiles
           .map(
             (profile) =>
-              `<li><strong>${profile.label}: ${profile.monthly_m3} m&sup3;</strong> - ${profile.rationale}</li>`,
+              `<li><strong>${escapeHtml(profile.label)}: ${escapeHtml(profile.monthly_m3)} m&sup3;</strong> - ${escapeHtml(profile.rationale)}</li>`,
           )
           .join("");
         const sourceLinks = payload.sources
           .map(
             (source) =>
-              `<a href="${source.url}" target="_blank" rel="noreferrer" title="${source.relevance}">${source.name}</a>`,
+              `<a href="${escapeAttr(safeExternalUrl(source.url))}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(source.relevance)}">${escapeHtml(source.name)}</a>`,
           )
           .join(" · ");
 
         waterProfileHelp.innerHTML = `
           <strong>Why 4, 6 and 9 m&sup3;?</strong>
-          <p>${payload.methodology}</p>
+          <p>${escapeHtml(payload.methodology)}</p>
           <ul>${profileReasons}</ul>
           <div>Sources: ${sourceLinks}</div>
         `;
@@ -710,7 +738,7 @@
         return `
           <div class="warnings">
             <strong>Data warnings</strong>
-            <ul>${warnings.map((warning) => `<li>${warning}</li>`).join("")}</ul>
+            <ul>${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>
           </div>
         `;
       }
@@ -718,18 +746,18 @@
       function renderLineItem(item, currency) {
         const label = categoryLabels[item.category] ?? item.label;
         const dataModeLabel = dataModeLabels[item.data_mode] ?? item.data_mode;
-        const dataModeClass = `badge mode ${item.data_mode}`;
+        const dataModeClass = `badge mode ${cssToken(item.data_mode)}`;
         const sourceTimeline = renderSourceTimeline(item);
         return `
           <div class="row">
             <div>
               <div class="row-title">
-                <span>${label}</span>
-                <span class="${dataModeClass}">${dataModeLabel}</span>
+                <span>${escapeHtml(label)}</span>
+                <span class="${escapeAttr(dataModeClass)}">${escapeHtml(dataModeLabel)}</span>
               </div>
               <div class="source">
-                <span class="source-meta">${item.source_name} · ${sourceTimeline}</span>
-                <br />${item.methodology}
+                <span class="source-meta">${escapeHtml(item.source_name)} · ${escapeHtml(sourceTimeline)}</span>
+                <br />${escapeHtml(item.methodology)}
               </div>
               ${renderTransportBasis(item, currency)}
             </div>
@@ -742,8 +770,8 @@
         if (item.category !== "public_transport") return "";
 
         const details = item.details ?? {};
-        const included = (details.modes_included ?? []).join(", ");
-        const excluded = (details.excluded_modes ?? []).join(", ");
+        const included = (details.modes_included ?? []).map(escapeHtml).join(", ");
+        const excluded = (details.excluded_modes ?? []).map(escapeHtml).join(", ");
         const baseFare = details.base_monthly_amount_eur;
         const fareComparison = baseFare
           ? `Current fare ${formatFare(item.monthly_amount, currency)}; published base fare ${formatFare(baseFare, currency)}.`
@@ -754,11 +782,11 @@
 
         return `
           <div class="calculation-basis">
-            <span><strong>Calculation used:</strong> ${details.product_name}.</span>
-            <span>${details.calculation_summary}</span>
+            <span><strong>Calculation used:</strong> ${escapeHtml(details.product_name)}.</span>
+            <span>${escapeHtml(details.calculation_summary)}</span>
             <span><strong>Included:</strong> ${included}.</span>
             ${excludedLine}
-            <span>${fareComparison}</span>
+            <span>${escapeHtml(fareComparison)}</span>
           </div>
         `;
       }
@@ -807,15 +835,15 @@
         const estimate = await response.json();
 
         if (!response.ok) {
-          result.innerHTML = `<div class="warnings">${estimate.detail}</div>`;
+          result.innerHTML = `<div class="warnings">${escapeHtml(estimate.detail)}</div>`;
           return;
         }
 
         result.innerHTML = `
-          <div>${estimate.city}, ${estimate.country}</div>
+          <div>${escapeHtml(estimate.city)}, ${escapeHtml(estimate.country)}</div>
           <div class="amount">${formatMoney(estimate.monthly_required, estimate.currency)}</div>
           <div>per month</div>
-          <div class="source">${estimate.profile}</div>
+          <div class="source">${escapeHtml(estimate.profile)}</div>
           <div class="summary">
             <div class="metric"><span>Baseline</span><strong>${formatMoney(estimate.monthly_baseline, estimate.currency)}</strong></div>
             <div class="metric"><span>Safety margin</span><strong>${formatMoney(estimate.monthly_safety_margin, estimate.currency)}</strong></div>

@@ -23,7 +23,7 @@ as official.
 
 | Category | First choice | Second choice | Fallback | Freshness target |
 | --- | --- | --- | --- | --- |
-| Rent | Idealista Search API or approved real-estate API | Permitted portal scrape | Manual seed | 7 days |
+| Rent | Official rental reference/open data | Approved real-estate API or permitted portal scrape | Manual seed | 7 days |
 | Electricity | eSIOS API | None | Manual seed | 1 day |
 | Gas | BOE OpenData gas TUR resolution discovery | None | Manual seed | 90 days |
 | Water | Municipal/provider tariff data | Permitted provider/city scrape | Manual seed | 180 days |

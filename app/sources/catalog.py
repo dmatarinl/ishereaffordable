@@ -24,8 +24,8 @@ SOURCE_RULES = {
     CostCategory.RENT: SourceRule(
         category=CostCategory.RENT,
         label="Rent",
-        first_choice="Idealista Search API or approved real-estate API",
-        second_choice="Permitted portal scrape",
+        first_choice="Official rental reference/open data",
+        second_choice="Approved real-estate API or permitted portal scrape",
         fallback="Manual rental seed",
         allowed_data_modes=[
             DataMode.OFFICIAL_API,
@@ -35,7 +35,10 @@ SOURCE_RULES = {
         ],
         freshness_days=7,
         stale_confidence=Confidence.LOW,
-        user_guidance="Rent should be refreshed weekly because listings move quickly.",
+        user_guidance=(
+            "Rent should use official reference data or an approved data API "
+            "before any portal scraping is considered."
+        ),
     ),
     CostCategory.ELECTRICITY: SourceRule(
         category=CostCategory.ELECTRICITY,

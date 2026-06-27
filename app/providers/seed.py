@@ -5,7 +5,6 @@ from app.cities import SupportedCity
 from app.food.basket import canonical_food_basket
 from app.water.profiles import DEFAULT_WATER_PROFILE, apply_water_profile
 
-IDEALISTA_ACCESS_URL = "https://developers.idealista.com/access-request"
 INE_API_URL = "https://www.ine.es/dyngs/DAB/index.htm?cid=1099"
 ESIOS_API_URL = "https://api.esios.ree.es"
 GITHUB_URL = "https://github.com/dmatarinl/ishereaffordable"
@@ -75,8 +74,8 @@ def _observed_at() -> datetime:
 
 
 class SeedHousingProvider:
-    source_id = "seed_housing_idealista_pending"
-    source_name = "Fallback rental seed pending Idealista Search API"
+    source_id = "seed_housing_rent_source_pending"
+    source_name = "Manual rental seed pending official or approved rent source"
 
     def fetch_city(self, city: SupportedCity) -> list[CostLineItem]:
         seed = RENT_SEEDS[city.key]
@@ -88,16 +87,20 @@ class SeedHousingProvider:
                 currency=city.currency,
                 data_mode=DataMode.MANUAL_SEED,
                 source_name=self.source_name,
-                source_url=IDEALISTA_ACCESS_URL,
+                source_url=GITHUB_URL,
                 observed_at=_observed_at(),
                 confidence=Confidence.LOW,
                 methodology=(
                     "Manual MVP fallback for the median monthly price of long-term "
-                    "one-bedroom rentals. Replace with Idealista Search API listings "
-                    "using median, P25 and P75 once credentials are available."
+                    "one-bedroom rentals. Replace with official rental reference/open "
+                    "data or an approved real-estate API once a viable source is "
+                    "available."
                 ),
                 details={
-                    "target_source": "Idealista Search API",
+                    "target_source": (
+                        "Official rental reference/open data or approved "
+                        "real-estate API"
+                    ),
                     "bedrooms": 1,
                     "operation": "rent",
                     "p25": seed["p25"],
