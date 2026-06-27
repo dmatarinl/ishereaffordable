@@ -80,3 +80,17 @@ export default async (req: Request) => {
     return jsonResponse({ detail: "Backend API is unavailable" }, 502);
   }
 };
+
+export const config = {
+  path: [
+    "/api/affordability",
+    "/api/cities",
+    "/api/electricity/profiles",
+    "/api/gas/profiles",
+    "/api/public-transport/fares",
+    "/api/sources/rules",
+    "/api/sources/status",
+    "/api/trash-tax/rules",
+    "/api/water/profiles",
+  ],
+};
