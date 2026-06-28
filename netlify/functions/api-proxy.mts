@@ -6,6 +6,20 @@ declare const Netlify: {
 
 const EXPECTED_API_ORIGIN = "https://is-here-affordable-api.onrender.com";
 const PROXY_PREFIXES = ["/.netlify/functions/api-proxy", "/api-proxy"];
+const STABLE_READ_PATHS = new Set([
+  "/api/cities",
+  "/api/electricity/profiles",
+  "/api/gas/profiles",
+  "/api/public-transport/fares",
+  "/api/sources/rules",
+  "/api/trash-tax/rules",
+  "/api/water/profiles",
+]);
+const STABLE_READ_CACHE =
+  "public, durable, max-age=3600, stale-while-revalidate=86400";
+const AFFORDABILITY_CACHE =
+  "public, durable, max-age=300, stale-while-revalidate=900";
+const BROWSER_REVALIDATE = "public, max-age=0, must-revalidate";
 
 function jsonResponse(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -48,6 +62,22 @@ function backendUrlFor(req: Request) {
   return backendUrl;
 }
 
+function cdnCacheControlFor(backendUrl: URL, status: number) {
+  if (status < 200 || status >= 300) {
+    return null;
+  }
+
+  if (backendUrl.pathname === "/api/affordability") {
+    return AFFORDABILITY_CACHE;
+  }
+
+  if (STABLE_READ_PATHS.has(backendUrl.pathname)) {
+    return STABLE_READ_CACHE;
+  }
+
+  return null;
+}
+
 export default async (req: Request) => {
   if (!["GET", "HEAD"].includes(req.method)) {
     return jsonResponse({ detail: "Method not allowed" }, 405);
@@ -87,6 +117,13 @@ export default async (req: Request) => {
     headers.delete("content-encoding");
     headers.delete("content-length");
     headers.delete("transfer-encoding");
+    const cdnCacheControl = cdnCacheControlFor(backendUrl, upstream.status);
+    if (cdnCacheControl) {
+      headers.set("Netlify-CDN-Cache-Control", cdnCacheControl);
+      headers.set("Cache-Control", BROWSER_REVALIDATE);
+    } else {
+      headers.set("Cache-Control", "no-store");
+    }
 
     return new Response(upstream.body, {
       status: upstream.status,

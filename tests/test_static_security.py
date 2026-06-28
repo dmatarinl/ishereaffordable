@@ -17,3 +17,21 @@ def test_netlify_csp_blocks_inline_assets() -> None:
     assert "script-src 'self'" in netlify_config
     assert "style-src 'self'" in netlify_config
     assert "unsafe-inline" not in netlify_config
+
+
+def test_netlify_proxy_adds_cdn_cache_for_public_read_endpoints() -> None:
+    proxy = Path("netlify/functions/api-proxy.mts").read_text()
+
+    assert '"/api/cities"' in proxy
+    assert '"/api/affordability"' in proxy
+    assert '"Netlify-CDN-Cache-Control"' in proxy
+    assert "public, durable, max-age=3600, stale-while-revalidate=86400" in proxy
+    assert "public, durable, max-age=300, stale-while-revalidate=900" in proxy
+    assert "public, max-age=0, must-revalidate" in proxy
+
+
+def test_netlify_proxy_does_not_cache_errors() -> None:
+    proxy = Path("netlify/functions/api-proxy.mts").read_text()
+
+    assert "status < 200 || status >= 300" in proxy
+    assert 'headers.set("Cache-Control", "no-store")' in proxy
