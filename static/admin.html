@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Is Here Affordable? Admin</title>
+    <link rel="stylesheet" href="/static/admin.css">
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Is Here Affordable?</p>
+          <h1>Data health dashboard</h1>
+        </div>
+        <a href="/" class="home-link">Public app</a>
+      </header>
+
+      <section class="panel auth-panel" aria-labelledby="auth-title">
+        <div>
+          <h2 id="auth-title">Admin access</h2>
+          <p>Use the admin key to view source health and queue manual refreshes.</p>
+        </div>
+        <form id="admin-auth-form" class="auth-form">
+          <label for="admin-key">Admin key</label>
+          <div class="auth-controls">
+            <input id="admin-key" name="admin-key" type="password" autocomplete="current-password">
+            <button type="submit">Unlock</button>
+            <button type="button" id="forget-key" class="secondary">Forget</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-content" class="admin-content" hidden>
+        <section class="panel actions-panel" aria-labelledby="refresh-title">
+          <div>
+            <h2 id="refresh-title">Manual refresh</h2>
+            <p>Queue a backend refresh for every city or a single supported city.</p>
+          </div>
+          <div class="refresh-controls">
+            <label for="refresh-city">Scope</label>
+            <select id="refresh-city">
+              <option value="">All cities</option>
+            </select>
+            <button type="button" id="refresh-button">Run refresh</button>
+          </div>
+        </section>
+
+        <section class="summary-grid" aria-label="Summary">
+          <article class="metric">
+            <span>Latest cache</span>
+            <strong id="latest-cache">-</strong>
+          </article>
+          <article class="metric">
+            <span>Sources</span>
+            <strong id="sources-total">-</strong>
+          </article>
+          <article class="metric">
+            <span>Issues</span>
+            <strong id="sources-issues">-</strong>
+          </article>
+          <article class="metric">
+            <span>Observations</span>
+            <strong id="observations-total">-</strong>
+          </article>
+        </section>
+
+        <section class="panel" aria-labelledby="manual-state-title">
+          <h2 id="manual-state-title">Refresh state</h2>
+          <div id="manual-refresh-state" class="state-line">No manual refresh has run in this server session.</div>
+          <ul id="manual-refresh-results" class="results-list"></ul>
+        </section>
+
+        <section class="panel" aria-labelledby="sources-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="sources-title">Source health</h2>
+              <p>Last backend run per source adapter.</p>
+            </div>
+            <button type="button" id="reload-status" class="secondary">Reload</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Status</th>
+                  <th>Last started</th>
+                  <th>Last finished</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody id="sources-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="observations-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="observations-title">Cached observations</h2>
+              <p>Current stored data modes and cache times by city and category.</p>
+            </div>
+            <label class="filter-label" for="observation-city">City
+              <select id="observation-city">
+                <option value="">All cities</option>
+              </select>
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>Category</th>
+                  <th>Mode</th>
+                  <th>Source</th>
+                  <th>Observed</th>
+                  <th>Cached</th>
+                  <th>Valid until</th>
+                </tr>
+              </thead>
+              <tbody id="observations-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <p id="admin-message" class="admin-message" role="status"></p>
+    </main>
+    <script src="/static/admin.js"></script>
+  </body>
+</html>

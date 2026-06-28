@@ -234,6 +234,7 @@ Before the Netlify site can serve live data, set:
 ```bash
 API_ORIGIN=https://your-python-backend.example.com
 BACKEND_PROXY_SECRET=<same-random-value-as-render>
+ADMIN_API_SECRET=<same-random-value-as-render>
 ```
 
 Do not set `ESIOS_API_TOKEN` or other provider credentials in Netlify unless a
@@ -241,6 +242,11 @@ future backend component explicitly needs them. The current Netlify layer is
 only a frontend/API proxy. `BACKEND_PROXY_SECRET` is not a provider credential;
 it is a shared secret used only so the backend can reject direct public API
 requests that do not pass through Netlify.
+
+The admin dashboard is available at `/admin.html`. It requires
+`ADMIN_API_SECRET`, then calls Netlify's admin proxy at `/admin-api/*`. The
+admin proxy verifies the key, forwards requests to `/api/admin/*`, and never
+caches admin responses.
 
 ### Python Backend
 
@@ -255,7 +261,9 @@ No-payment-oriented path for `ishereaffordable.com`:
    - `DATABASE_URL`
    - `ESIOS_API_TOKEN`
    - `BACKEND_PROXY_SECRET`
-5. Set the same `BACKEND_PROXY_SECRET` value in Netlify production env vars.
+   - `ADMIN_API_SECRET`
+5. Set the same `BACKEND_PROXY_SECRET` and `ADMIN_API_SECRET` values in Netlify
+   production env vars.
 6. Run the `Refresh cost observations` GitHub Actions workflow once manually.
 7. Copy the Render service URL into Netlify as `API_ORIGIN`.
 8. Add `ishereaffordable.com` as a custom domain in Netlify.
@@ -284,6 +292,7 @@ GAS_VAT_RATE_PERCENT=21
 GAS_HYDROCARBONS_TAX_EUR_PER_KWH=0.00234
 GAS_METER_RENTAL_MONTHLY_EUR=0
 BACKEND_PROXY_SECRET=
+ADMIN_API_SECRET=
 ENABLE_SUPERMARKET_SCRAPING=false
 SOURCE_USER_AGENT="IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"
 ```

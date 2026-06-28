@@ -10,6 +10,15 @@ def test_static_html_uses_external_assets() -> None:
     assert 'href="/static/styles.css"' in html
 
 
+def test_admin_html_uses_external_assets() -> None:
+    html = Path("static/admin.html").read_text()
+
+    assert "<script>" not in html
+    assert "<style>" not in html
+    assert 'src="/static/admin.js"' in html
+    assert 'href="/static/admin.css"' in html
+
+
 def test_netlify_csp_blocks_inline_assets() -> None:
     netlify_config = Path("netlify.toml").read_text()
 
@@ -35,3 +44,13 @@ def test_netlify_proxy_does_not_cache_errors() -> None:
 
     assert "status < 200 || status >= 300" in proxy
     assert 'headers.set("Cache-Control", "no-store")' in proxy
+
+
+def test_netlify_admin_proxy_requires_secret_and_never_caches() -> None:
+    proxy = Path("netlify/functions/admin-proxy.mts").read_text()
+
+    assert "ADMIN_API_SECRET" in proxy
+    assert '"/admin-api/sources/status"' in proxy
+    assert '"/admin-api/refresh"' in proxy
+    assert '"cache-control": "no-store"' in proxy
+    assert 'responseHeaders.set("cache-control", "no-store")' in proxy

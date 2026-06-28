@@ -1,0 +1,303 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f1e8;
+  --panel: #ffffff;
+  --ink: #121212;
+  --muted: #5f6875;
+  --line: #d6dee4;
+  --accent: #167c6b;
+  --accent-dark: #0d5f52;
+  --soft: #edf4f2;
+  --danger: #a83f32;
+  --warning: #9a6726;
+  --ok: #246b3a;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 18px;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+button.secondary {
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+}
+
+button.secondary:hover {
+  background: var(--soft);
+}
+
+input,
+select {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--ink);
+  padding: 0 12px;
+}
+
+.admin-shell {
+  width: min(1220px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.topbar,
+.section-heading,
+.auth-panel,
+.actions-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.topbar {
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 0.95;
+  margin-top: 6px;
+}
+
+h2 {
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 8px;
+}
+
+.home-link {
+  color: var(--accent-dark);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.panel,
+.metric {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 16px 42px rgb(25 37 54 / 8%);
+}
+
+.panel {
+  padding: 22px;
+  margin-top: 18px;
+}
+
+.auth-form,
+.refresh-controls {
+  display: grid;
+  gap: 8px;
+  min-width: min(460px, 100%);
+}
+
+.auth-controls,
+.refresh-controls {
+  grid-template-columns: 1fr auto auto;
+  align-items: end;
+}
+
+.auth-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.refresh-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.metric {
+  padding: 18px;
+}
+
+.metric span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.metric strong {
+  display: block;
+  font-size: 1.55rem;
+  line-height: 1.1;
+  margin-top: 8px;
+}
+
+.state-line,
+.admin-message {
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.admin-message {
+  margin-top: 18px;
+  min-height: 24px;
+}
+
+.results-list {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.results-list li {
+  color: var(--muted);
+  list-style: none;
+}
+
+.table-wrap {
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 860px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+td {
+  color: #27303a;
+  font-size: 0.94rem;
+}
+
+.badge {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 4px 9px;
+  text-transform: uppercase;
+}
+
+.badge-ok,
+.badge-official-api,
+.badge-official-publication,
+.badge-calculated {
+  background: #dff2e5;
+  color: var(--ok);
+}
+
+.badge-degraded,
+.badge-permitted-scrape {
+  background: #fbecd6;
+  color: var(--warning);
+}
+
+.badge-failed,
+.badge-manual-seed,
+.badge-unavailable {
+  background: #fae4df;
+  color: var(--danger);
+}
+
+.filter-label {
+  color: var(--muted);
+  display: grid;
+  font-weight: 800;
+  gap: 8px;
+  min-width: 220px;
+}
+
+@media (max-width: 760px) {
+  .admin-shell {
+    width: min(100% - 20px, 1220px);
+    padding-top: 18px;
+  }
+
+  .topbar,
+  .section-heading,
+  .auth-panel,
+  .actions-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .auth-controls,
+  .refresh-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

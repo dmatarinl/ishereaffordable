@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from app.affordability.models import SourceStatus
 from app.core.config import settings
 from app.main import app, public_source_statuses
+from app.services.refresh import RefreshResult
 
 
 def test_affordability_endpoint_returns_source_breakdown() -> None:
@@ -325,6 +326,83 @@ def test_sources_status_endpoint_returns_refresh_health() -> None:
 
     assert response.status_code == 200
     assert response.json()["sources"]
+
+
+def test_admin_status_requires_admin_secret_when_configured() -> None:
+    original_secret = settings.admin_api_secret
+    settings.admin_api_secret = "admin-test-secret"
+    try:
+        with TestClient(app) as client:
+            response = client.get("/api/admin/sources/status")
+
+        assert response.status_code == 401
+    finally:
+        settings.admin_api_secret = original_secret
+
+
+def test_admin_status_returns_source_and_observation_health() -> None:
+    original_secret = settings.admin_api_secret
+    settings.admin_api_secret = "admin-test-secret"
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/admin/sources/status",
+                headers={"authorization": "Bearer admin-test-secret"},
+            )
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["summary"]["sources_total"] > 0
+        assert payload["summary"]["observations_total"] > 0
+        assert payload["sources"]
+        assert payload["observations"]
+        assert payload["manual_refresh"]["running"] is False
+    finally:
+        settings.admin_api_secret = original_secret
+
+
+def test_admin_refresh_rejects_unknown_city() -> None:
+    original_secret = settings.admin_api_secret
+    settings.admin_api_secret = "admin-test-secret"
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/admin/refresh?city=Paris",
+                headers={"authorization": "Bearer admin-test-secret"},
+            )
+
+        assert response.status_code == 404
+    finally:
+        settings.admin_api_secret = original_secret
+
+
+def test_admin_refresh_queues_manual_city_refresh(monkeypatch) -> None:
+    original_secret = settings.admin_api_secret
+    settings.admin_api_secret = "admin-test-secret"
+
+    def fake_refresh_city(city_name, repository):
+        assert city_name == "Madrid"
+        return RefreshResult(city_key="madrid", observations=7, warnings=[])
+
+    monkeypatch.setattr("app.main.refresh_city_observations", fake_refresh_city)
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/admin/refresh?city=Madrid",
+                headers={"authorization": "Bearer admin-test-secret"},
+            )
+            status_response = client.get(
+                "/api/admin/sources/status",
+                headers={"authorization": "Bearer admin-test-secret"},
+            )
+
+        assert response.status_code == 202
+        assert response.json()["scope"] == "Madrid"
+        manual_refresh = status_response.json()["manual_refresh"]
+        assert manual_refresh["last_status"] == "ok"
+        assert manual_refresh["last_results"][0]["city_key"] == "madrid"
+    finally:
+        settings.admin_api_secret = original_secret
 
 
 def test_public_source_status_hides_failed_provider_details() -> None:

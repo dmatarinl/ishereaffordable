@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     gas_hydrocarbons_tax_eur_per_kwh: float = 0.00234
     gas_meter_rental_monthly_eur: float = 0
     backend_proxy_secret: str | None = None
+    admin_api_secret: str | None = None
     enable_supermarket_scraping: bool = False
     source_user_agent: str = Field(
         default="IsHereAffordableBot/0.1 (+https://ishereaffordable.com)"

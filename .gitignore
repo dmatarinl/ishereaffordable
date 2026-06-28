@@ -1,5 +1,6 @@
 .DS_Store
 .env
+.admin-secret
 .venv/
 __pycache__/
 *.py[cod]
