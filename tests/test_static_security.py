@@ -15,6 +15,7 @@ def test_admin_html_uses_external_assets() -> None:
 
     assert "<script>" not in html
     assert "<style>" not in html
+    assert '<meta name="robots" content="noindex,nofollow">' in html
     assert 'src="/static/admin.js"' in html
     assert 'href="/static/admin.css"' in html
 
@@ -26,6 +27,14 @@ def test_netlify_csp_blocks_inline_assets() -> None:
     assert "script-src 'self'" in netlify_config
     assert "style-src 'self'" in netlify_config
     assert "unsafe-inline" not in netlify_config
+    assert 'X-Robots-Tag = "noindex, nofollow"' in netlify_config
+
+
+def test_admin_key_is_not_persisted_in_browser_storage() -> None:
+    admin_script = Path("static/admin.js").read_text()
+
+    assert "sessionStorage" not in admin_script
+    assert "localStorage" not in admin_script
 
 
 def test_netlify_proxy_adds_cdn_cache_for_public_read_endpoints() -> None:

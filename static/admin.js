@@ -1,5 +1,5 @@
 const state = {
-  token: sessionStorage.getItem("iha_admin_token") || "",
+  token: "",
   payload: null,
 };
 
@@ -219,11 +219,10 @@ async function runRefresh() {
 elements.authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   state.token = elements.adminKey.value.trim();
-  sessionStorage.setItem("iha_admin_token", state.token);
   try {
     await loadStatus();
   } catch (error) {
-    sessionStorage.removeItem("iha_admin_token");
+    state.token = "";
     setMessage(error.message, true);
   }
 });
@@ -232,7 +231,6 @@ elements.forgetKey.addEventListener("click", () => {
   state.token = "";
   elements.adminKey.value = "";
   elements.adminContent.hidden = true;
-  sessionStorage.removeItem("iha_admin_token");
   setMessage("Admin key forgotten.");
 });
 
@@ -250,7 +248,4 @@ elements.observationCity.addEventListener("change", () => {
   }
 });
 
-if (state.token) {
-  elements.adminKey.value = state.token;
-  loadStatus().catch((error) => setMessage(error.message, true));
-}
+setMessage("Enter the admin key to load source health.");
