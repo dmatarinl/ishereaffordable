@@ -44,9 +44,56 @@ main {
   font-size: 18px;
 }
 
-.domain {
-  color: var(--muted);
+.maker-credit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.maker-credit-text {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.linkedin-link {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  line-height: 0;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.linkedin-link:hover,
+.linkedin-link:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgb(10 102 194 / 24%);
+}
+
+.linkedin-link:focus-visible {
+  outline: 3px solid rgb(18 108 99 / 28%);
+  outline-offset: 4px;
+}
+
+.linkedin-link img {
+  display: block;
+  width: 18px;
+  max-width: 18px;
+  height: 18px;
+  max-height: 18px;
+  object-fit: contain;
+}
+
+.linkedin-link img[width][height] {
+  display: block;
 }
 
 .layout {
@@ -399,6 +446,20 @@ button:hover {
 }
 
 @media (max-width: 860px) {
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .maker-credit {
+    font-size: 12px;
+  }
+
+  .linkedin-link,
+  .linkedin-link img {
+    width: 18px;
+    height: 18px;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }
