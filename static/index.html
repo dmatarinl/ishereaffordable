@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Is Here Affordable?</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260628-maker-credit" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260629-loading-state" />
   </head>
   <body>
     <main>
@@ -43,7 +43,9 @@
           <form id="calculator-form">
             <label class="field">
               City
-              <select id="city" name="city"></select>
+              <select id="city" name="city" disabled>
+                <option>Loading cities...</option>
+              </select>
             </label>
             <div class="settings-grid">
               <div class="field">
@@ -53,7 +55,10 @@
                   id="electricity-profile"
                   role="radiogroup"
                   aria-label="Electricity profile"
-                ></div>
+                  aria-busy="true"
+                >
+                  <span class="segmented-loading">Loading profiles...</span>
+                </div>
               </div>
               <div class="field">
                 <span>Gas profile</span>
@@ -62,7 +67,10 @@
                   id="gas-profile"
                   role="radiogroup"
                   aria-label="Gas profile"
-                ></div>
+                  aria-busy="true"
+                >
+                  <span class="segmented-loading">Loading profiles...</span>
+                </div>
               </div>
               <div class="field">
                 <div class="field-heading">
@@ -83,7 +91,10 @@
                   id="water-profile"
                   role="radiogroup"
                   aria-label="Water profile"
-                ></div>
+                  aria-busy="true"
+                >
+                  <span class="segmented-loading">Loading profiles...</span>
+                </div>
               </div>
               <div class="field">
                 <span>Safety margin</span>
@@ -132,10 +143,16 @@
                 />
               </div>
             </div>
-            <button type="submit">Calculate</button>
+            <button id="calculate-button" type="submit" disabled>
+              Loading data...
+            </button>
           </form>
 
-          <div class="result" id="result" hidden></div>
+          <div class="result loading-card" id="result" aria-live="polite">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <strong>Loading latest cached data</strong>
+            <span>Preparing city, utility and profile data from the server.</span>
+          </div>
         </section>
       </section>
     </main>

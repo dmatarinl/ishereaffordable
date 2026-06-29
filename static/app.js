@@ -8,7 +8,11 @@ const waterProfileHelp = document.querySelector(
 );
 const waterProfileHelpControl = document.querySelector(".profile-help");
 const customSafetyMarginInput = document.querySelector("#custom-safety-margin");
+const calculateButton = document.querySelector("#calculate-button");
 const result = document.querySelector("#result");
+let appReady = false;
+let activeCalculationId = 0;
+let customMarginTimer;
 
 const formatMoney = (value, currency) =>
   new Intl.NumberFormat("en", {
@@ -78,6 +82,7 @@ const dataModeLabels = {
 
 async function loadCities() {
   const response = await fetch("/api/cities");
+  if (!response.ok) throw new Error("Could not load cities");
   const payload = await response.json();
   citySelect.innerHTML = payload.cities
     .map(
@@ -85,10 +90,12 @@ async function loadCities() {
         `<option value="${escapeAttr(city.key)}">${escapeHtml(city.name)}</option>`,
     )
     .join("");
+  citySelect.disabled = false;
 }
 
 async function loadElectricityProfiles() {
   const response = await fetch("/api/electricity/profiles");
+  if (!response.ok) throw new Error("Could not load electricity profiles");
   const payload = await response.json();
   electricityProfileGroup.innerHTML = payload.profiles
     .map(
@@ -104,10 +111,12 @@ async function loadElectricityProfiles() {
         </label>`,
     )
     .join("");
+  electricityProfileGroup.removeAttribute("aria-busy");
 }
 
 async function loadGasProfiles() {
   const response = await fetch("/api/gas/profiles");
+  if (!response.ok) throw new Error("Could not load gas profiles");
   const payload = await response.json();
   gasProfileGroup.innerHTML = payload.profiles
     .map(
@@ -123,10 +132,12 @@ async function loadGasProfiles() {
         </label>`,
     )
     .join("");
+  gasProfileGroup.removeAttribute("aria-busy");
 }
 
 async function loadWaterProfiles() {
   const response = await fetch("/api/water/profiles");
+  if (!response.ok) throw new Error("Could not load water profiles");
   const payload = await response.json();
   waterProfileGroup.innerHTML = payload.profiles
     .map(
@@ -142,6 +153,7 @@ async function loadWaterProfiles() {
         </label>`,
     )
     .join("");
+  waterProfileGroup.removeAttribute("aria-busy");
 
   const profileReasons = payload.profiles
     .map(
@@ -162,6 +174,37 @@ async function loadWaterProfiles() {
     <ul>${profileReasons}</ul>
     <div>Sources: ${sourceLinks}</div>
   `;
+}
+
+function setStartupLoading() {
+  calculateButton.disabled = true;
+  calculateButton.textContent = "Loading data...";
+  result.hidden = false;
+  result.className = "result loading-card";
+  result.innerHTML = `
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <strong>Loading latest cached data</strong>
+    <span>Preparing city, utility and profile data from the server.</span>
+  `;
+}
+
+function setStartupError(message) {
+  calculateButton.disabled = true;
+  calculateButton.textContent = "Try again";
+  result.hidden = false;
+  result.className = "result";
+  result.innerHTML = `
+    <div class="warnings">
+      <strong>Data could not load</strong>
+      <p>${escapeHtml(message)}. Please refresh the page in a moment.</p>
+    </div>
+  `;
+}
+
+function setReadyState() {
+  appReady = true;
+  calculateButton.disabled = false;
+  calculateButton.textContent = "Calculate";
 }
 
 function selectedRadioValue(name) {
@@ -267,6 +310,8 @@ function renderSourceTimeline(item) {
 }
 
 async function calculate() {
+  if (!appReady) return;
+
   const params = new URLSearchParams({
     city: citySelect.value,
     currency: "EUR",
@@ -276,17 +321,59 @@ async function calculate() {
     safety_margin_percent: selectedSafetyMargin(),
   });
 
+  const calculationId = activeCalculationId + 1;
+  activeCalculationId = calculationId;
   result.hidden = false;
-  result.textContent = "Calculating...";
+  calculateButton.disabled = true;
+  calculateButton.textContent = "Updating...";
 
-  const response = await fetch(`/api/affordability?${params.toString()}`);
-  const estimate = await response.json();
+  const hasEstimate = result.querySelector(".amount");
+  if (hasEstimate) {
+    result.classList.add("is-updating");
+    result.setAttribute("aria-busy", "true");
+  } else {
+    result.className = "result loading-card";
+    result.innerHTML = `
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <strong>Loading latest cached estimate</strong>
+      <span>Waking the public API if needed and reading cached observations.</span>
+    `;
+  }
+
+  let response;
+  let estimate;
+  try {
+    response = await fetch(`/api/affordability?${params.toString()}`);
+    estimate = await response.json();
+  } catch {
+    if (calculationId !== activeCalculationId) return;
+    calculateButton.disabled = false;
+    calculateButton.textContent = "Calculate";
+    result.className = "result";
+    result.removeAttribute("aria-busy");
+    result.innerHTML = `
+      <div class="warnings">
+        <strong>Estimate is temporarily unavailable</strong>
+        <p>The public API is taking longer than expected. Please try again in a moment.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (calculationId !== activeCalculationId) return;
+
+  calculateButton.disabled = false;
+  calculateButton.textContent = "Calculate";
+  result.classList.remove("is-updating");
+  result.removeAttribute("aria-busy");
 
   if (!response.ok) {
+    result.className = "result";
     result.innerHTML = `<div class="warnings">${escapeHtml(estimate.detail)}</div>`;
     return;
   }
 
+  result.className = "result";
   result.innerHTML = `
     <div>${escapeHtml(estimate.city)}, ${escapeHtml(estimate.country)}</div>
     <div class="amount">${formatMoney(estimate.monthly_required, estimate.currency)}</div>
@@ -345,7 +432,10 @@ form.addEventListener("change", (event) => {
   }
 });
 
-customSafetyMarginInput.addEventListener("input", calculate);
+customSafetyMarginInput.addEventListener("input", () => {
+  window.clearTimeout(customMarginTimer);
+  customMarginTimer = window.setTimeout(calculate, 250);
+});
 
 const usesDesktopHover = () =>
   window.matchMedia(
@@ -389,10 +479,18 @@ function setupHoverHelp(control) {
 }
 
 setupHoverHelp(waterProfileHelpControl);
+setStartupLoading();
 
 Promise.all([
   loadCities(),
   loadElectricityProfiles(),
   loadGasProfiles(),
   loadWaterProfiles(),
-]).then(calculate);
+])
+  .then(() => {
+    setReadyState();
+    calculate();
+  })
+  .catch((error) => {
+    setStartupError(error.message || "The public API is temporarily unavailable");
+  });
