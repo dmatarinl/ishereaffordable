@@ -80,10 +80,58 @@ const dataModeLabels = {
   unavailable: "Unavailable",
 };
 
+const sleep = (milliseconds) =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+
+const shouldRetryStatus = (status) =>
+  [408, 429, 500, 502, 503, 504].includes(status);
+
+async function fetchJsonWithRetry(url, label, options = {}) {
+  const retries = options.retries ?? 4;
+  const delays = options.delays ?? [500, 1000, 1800, 3000];
+  let lastError = new Error(`Could not load ${label}`);
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: { accept: "application/json" },
+      });
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+
+      if (response.ok) {
+        return payload;
+      }
+
+      const detail = payload.detail ? String(payload.detail) : response.statusText;
+      lastError = new Error(detail || `Could not load ${label}`);
+      lastError.retryable = shouldRetryStatus(response.status);
+      if (!lastError.retryable || attempt === retries) {
+        throw lastError;
+      }
+    } catch (error) {
+      lastError = error instanceof Error
+        ? error
+        : new Error(`Could not load ${label}`);
+      if (lastError.retryable === false || attempt === retries) {
+        throw lastError;
+      }
+    }
+
+    await sleep(delays[Math.min(attempt, delays.length - 1)]);
+  }
+
+  throw lastError;
+}
+
 async function loadCities() {
-  const response = await fetch("/api/cities");
-  if (!response.ok) throw new Error("Could not load cities");
-  const payload = await response.json();
+  const payload = await fetchJsonWithRetry("/api/cities", "cities");
   citySelect.innerHTML = payload.cities
     .map(
       (city) =>
@@ -94,9 +142,10 @@ async function loadCities() {
 }
 
 async function loadElectricityProfiles() {
-  const response = await fetch("/api/electricity/profiles");
-  if (!response.ok) throw new Error("Could not load electricity profiles");
-  const payload = await response.json();
+  const payload = await fetchJsonWithRetry(
+    "/api/electricity/profiles",
+    "electricity profiles",
+  );
   electricityProfileGroup.innerHTML = payload.profiles
     .map(
       (profile) =>
@@ -115,9 +164,7 @@ async function loadElectricityProfiles() {
 }
 
 async function loadGasProfiles() {
-  const response = await fetch("/api/gas/profiles");
-  if (!response.ok) throw new Error("Could not load gas profiles");
-  const payload = await response.json();
+  const payload = await fetchJsonWithRetry("/api/gas/profiles", "gas profiles");
   gasProfileGroup.innerHTML = payload.profiles
     .map(
       (profile) =>
@@ -136,9 +183,10 @@ async function loadGasProfiles() {
 }
 
 async function loadWaterProfiles() {
-  const response = await fetch("/api/water/profiles");
-  if (!response.ok) throw new Error("Could not load water profiles");
-  const payload = await response.json();
+  const payload = await fetchJsonWithRetry(
+    "/api/water/profiles",
+    "water profiles",
+  );
   waterProfileGroup.innerHTML = payload.profiles
     .map(
       (profile) =>
@@ -340,12 +388,14 @@ async function calculate() {
     `;
   }
 
-  let response;
   let estimate;
   try {
-    response = await fetch(`/api/affordability?${params.toString()}`);
-    estimate = await response.json();
-  } catch {
+    estimate = await fetchJsonWithRetry(
+      `/api/affordability?${params.toString()}`,
+      "estimate",
+      { retries: 5, delays: [600, 1200, 2200, 3500, 5000] },
+    );
+  } catch (error) {
     if (calculationId !== activeCalculationId) return;
     calculateButton.disabled = false;
     calculateButton.textContent = "Calculate";
@@ -354,7 +404,7 @@ async function calculate() {
     result.innerHTML = `
       <div class="warnings">
         <strong>Estimate is temporarily unavailable</strong>
-        <p>The public API is taking longer than expected. Please try again in a moment.</p>
+        <p>${escapeHtml(error.message || "The public API is taking longer than expected")}. Please try again in a moment.</p>
       </div>
     `;
     return;
@@ -366,12 +416,6 @@ async function calculate() {
   calculateButton.textContent = "Calculate";
   result.classList.remove("is-updating");
   result.removeAttribute("aria-busy");
-
-  if (!response.ok) {
-    result.className = "result";
-    result.innerHTML = `<div class="warnings">${escapeHtml(estimate.detail)}</div>`;
-    return;
-  }
 
   result.className = "result";
   result.innerHTML = `

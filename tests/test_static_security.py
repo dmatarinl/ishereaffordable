@@ -6,7 +6,7 @@ def test_static_html_uses_external_assets() -> None:
 
     assert "<script>" not in html
     assert "<style>" not in html
-    assert 'src="/static/app.js"' in html
+    assert 'src="/static/app.js' in html
     assert 'href="/static/styles.css' in html
 
 
