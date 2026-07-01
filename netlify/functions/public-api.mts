@@ -779,7 +779,7 @@ async function handleAffordability(req: Request) {
     throw error;
   }
   if (!observations.length) {
-    return jsonResponse({ detail: "No cached observations found. Run python -m app.jobs.refresh_all." }, 503);
+    return jsonResponse({ detail: "Cost data is temporarily unavailable for this city." }, 503);
   }
   return jsonResponse(
     estimate(city, observations, electricityProfile, gasProfile, waterProfile, safetyMarginPercent),
@@ -828,13 +828,8 @@ export default async (req: Request) => {
       return await handleAffordability(req);
     }
     return jsonResponse({ detail: "Not found" }, 404);
-  } catch (error) {
-    return jsonResponse(
-      {
-        detail: error instanceof Error ? error.message : "Public API is unavailable",
-      },
-      503,
-    );
+  } catch {
+    return jsonResponse({ detail: "Public API is temporarily unavailable." }, 503);
   }
 };
 
