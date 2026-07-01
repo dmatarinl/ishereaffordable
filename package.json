@@ -1,0 +1,14 @@
+{
+  "name": "ishereaffordable",
+  "version": "1.0.0",
+  "description": "Python web app to estimate how much money someone needs today to live in a Spanish city.",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmatarinl/ishereaffordable.git"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0"
+  }
+}

@@ -12,6 +12,7 @@ data/*.db-*
 dist/
 build/
 *.egg-info/
+node_modules/
 
 # Local Netlify and AI tooling
 .netlify/

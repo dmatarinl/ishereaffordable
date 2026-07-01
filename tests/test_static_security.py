@@ -37,15 +37,16 @@ def test_admin_key_is_not_persisted_in_browser_storage() -> None:
     assert "localStorage" not in admin_script
 
 
-def test_netlify_proxy_adds_cdn_cache_for_public_read_endpoints() -> None:
-    proxy = Path("netlify/functions/api-proxy.mts").read_text()
+def test_netlify_public_api_adds_cdn_cache_for_public_read_endpoints() -> None:
+    public_api = Path("netlify/functions/public-api.mts").read_text()
 
-    assert '"/api/cities"' in proxy
-    assert '"/api/affordability"' in proxy
-    assert '"Netlify-CDN-Cache-Control"' in proxy
-    assert "public, durable, max-age=3600, stale-while-revalidate=86400" in proxy
-    assert "public, durable, max-age=300, stale-while-revalidate=900" in proxy
-    assert "public, max-age=0, must-revalidate" in proxy
+    assert '"/api/cities"' in public_api
+    assert '"/api/affordability"' in public_api
+    assert '"Netlify-CDN-Cache-Control"' in public_api
+    assert "public, durable, max-age=3600, stale-while-revalidate=86400" in public_api
+    assert "public, durable, max-age=300, stale-while-revalidate=900" in public_api
+    assert "public, max-age=0, must-revalidate" in public_api
+    assert "DATABASE_URL" in public_api
 
 
 def test_netlify_proxy_does_not_cache_errors() -> None:

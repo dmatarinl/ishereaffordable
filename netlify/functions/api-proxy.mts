@@ -7,13 +7,9 @@ declare const Netlify: {
 const EXPECTED_API_ORIGIN = "https://is-here-affordable-api.onrender.com";
 const PROXY_PREFIXES = ["/.netlify/functions/api-proxy", "/api-proxy"];
 const STABLE_READ_PATHS = new Set([
-  "/api/cities",
-  "/api/electricity/profiles",
-  "/api/gas/profiles",
   "/api/public-transport/fares",
   "/api/sources/rules",
   "/api/trash-tax/rules",
-  "/api/water/profiles",
 ]);
 const STABLE_READ_CACHE =
   "public, durable, max-age=3600, stale-while-revalidate=86400";
@@ -137,13 +133,8 @@ export default async (req: Request) => {
 
 export const config = {
   path: [
-    "/api/affordability",
-    "/api/cities",
-    "/api/electricity/profiles",
-    "/api/gas/profiles",
     "/api/public-transport/fares",
     "/api/sources/rules",
     "/api/trash-tax/rules",
-    "/api/water/profiles",
   ],
 };
